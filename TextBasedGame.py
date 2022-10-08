@@ -9,7 +9,7 @@ BitMasher, a text adventure game where you act as an antiviris attempting to rid
 
 import os
 from enum import Enum, auto
-from random import randint, shuffle
+import random
 from shutil import get_terminal_size
 from sys import exit
 from time import sleep
@@ -112,11 +112,17 @@ class Room:
                                Direction.LEFT:  None,
                                Direction.RIGHT: None  }
 
+    def __getitem__(self, direction: Direction) -> 'Room':
+        return self.adjacentRooms[direction]
+
+    def __setitem__(self, direction: Direction, room: 'Room'):
+        self.adjacentRooms[direction] = room
+
     def setAdjacent(self, direction: Direction, room: 'Room') -> 'Room':
         """ Sets which room is located in a direction from the current room. Also sets this room's
             position in the adjacent room. """
-        self.adjacentRooms[direction]            = room
-        room.adjacentRooms[direction.opposite()] = self
+        self[direction]            = room
+        room[direction.opposite()] = self
         return self
 
 
@@ -126,42 +132,66 @@ def generateRequiredItems() -> List[str]:
              "Full memory write access",
              "Pointer dereferencer",
              "OS override capability"    ] + \
-           [ "Malware code fragment"     ] * randint(1, 3) + \
-           [ "Vulnerability"             ] * randint(1, 3)
+           [ "Malware code fragment"     ] * random.randint(1, 3) + \
+           [ "Vulnerability"             ] * random.randint(1, 3)
 
 def generateMap(requiredItems: List[str]) -> Room:
     """ Generates a new game map with randomly placed rooms populated with items and the randsomeware.
         Returns the starting room. """
     #TODO: ensure the item pool is smaller or the same size as the room pool.
     startingRoom = Room("The Boot Loader")
-    itemPool = requiredItems[:]
+    itemPool = requiredItems.copy()
     roomPool = generateMap.systemRooms + generateMap.userApplications
 
-    shuffle(itemPool)
-    shuffle(roomPool)
+    random.shuffle(itemPool)
+    random.shuffle(roomPool)
 
     for i in range(0, len(itemPool) - 1):
         traverser = startingRoom
+        previousDirection = None
+        stepsLeft = 10
 
-        #TODO Make traverser make actual random generation.
-        while traverser.adjacentRooms[Direction.UP] is not None:
-            traverser = traverser.adjacentRooms[Direction.UP]
-        traverser.setAdjacent(Direction.UP, Room(roomPool[i], itemPool[i]))
+        #TODO Does not connect existing rooms together except for the previous one. Possibly fix.
+        while stepsLeft >= 0:
+            stepsLeft -= 1
+
+            if random.random() < 0.7:
+                possibleDirections = [direction for direction in list(Direction) 
+                                      if traverser[direction] is not None and
+                                         direction is not previousDirection]
+                if len(possibleDirections) == 0:
+                    stepsLeft += 1
+                    continue
+
+                nextDirection = random.choice(possibleDirections)
+                traverser = traverser[nextDirection]
+                previousDirection = nextDirection.opposite()
+
+            else:
+                possibleDirections = [direction for direction in list(Direction) 
+                                      if traverser[direction] is None]
+                if len(possibleDirections) == 0:
+                    stepsLeft += 1
+                    continue
+
+                traverser.setAdjacent(random.choice(possibleDirections)
+                                    , Room(roomPool[i], itemPool[i]))
+                break
 
     return startingRoom
 
 #TODO: If no signifcant difference is made between these two then remove them.
-generateMap.systemRooms = [ "the Registry",
-                            "the Network interfaces",
-                            "the Kernal",
-                            "the Hard drive",
-                            "the Web browser"         ]
+generateMap.systemRooms = [ "The Registry",
+                            "The Network interfaces",
+                            "The Kernal",
+                            "The Hard drive",
+                            "The Web browser"         ]
 generateMap.userApplications = [ "PainterEX",
                                  "BitMasher",
-                                 "the ilo li sina Interpreter",
+                                 "The ilo li sina Interpreter",
                                  "FreeWriter",
                                  "PIMG",
-                                 "the Espresso Runtime Enviroment",
+                                 "The Espresso Runtime Enviroment",
                                  "SuperCAD",
                                  "MacroDoi",
                                  "Conway's Ivory Tower"         ]
@@ -221,30 +251,30 @@ def main():
 
     while True:
         clearScreen()
-        delayedPrint(f"You are currently in {currentRoom.name}")
+        delayedPrint(currentRoom.name, center=True)
         delayedPrint()
         gameMenu.dumpOptions()
         #TODO: Generalize movement code if possible. Try to make dependent on names of direction enum.
-        if currentRoom.adjacentRooms[Direction.UP] is not None:
-            gameMenu.addOption('u', f"There is {currentRoom.adjacentRooms[Direction.UP].name} (u)p above")
-        if currentRoom.adjacentRooms[Direction.DOWN] is not None:
-            gameMenu.addOption('d', f"There is {currentRoom.adjacentRooms[Direction.DOWN].name} (d)own below you")
-        if currentRoom.adjacentRooms[Direction.LEFT] is not None:
-            gameMenu.addOption('l', f"To the (l)eft there is {currentRoom.adjacentRooms[Direction.LEFT].name}")
-        if currentRoom.adjacentRooms[Direction.RIGHT] is not None:
-            gameMenu.addOption('r', f"To the (r)ight there is {currentRoom.adjacentRooms[Direction.RIGHT].name}")
+        if currentRoom[Direction.UP] is not None:
+            gameMenu.addOption('u', f"[{currentRoom[Direction.UP].name}] is (u)p above")
+        if currentRoom[Direction.DOWN] is not None:
+            gameMenu.addOption('d', f"[{currentRoom[Direction.DOWN].name}] is (d)own below")
+        if currentRoom[Direction.LEFT] is not None:
+            gameMenu.addOption('l', f"[{currentRoom[Direction.LEFT].name}] is to the (l)eft")
+        if currentRoom[Direction.RIGHT] is not None:
+            gameMenu.addOption('r', f"[{currentRoom[Direction.RIGHT].name}] is to the (r)ight")
         #TODO Make this exit to the start menu instead of exiting the game entirely.
         gameMenu.addOption('e', '(E)xit')
 
         choice = gameMenu.getSelection()
         if choice == 'u':
-            currentRoom = currentRoom.adjacentRooms[Direction.UP]
+            currentRoom = currentRoom[Direction.UP]
         elif choice == 'd':
-            currentRoom = currentRoom.adjacentRooms[Direction.DOWN]
+            currentRoom = currentRoom[Direction.DOWN]
         elif choice == 'l':
-            currentRoom = currentRoom.adjacentRooms[Direction.LEFT]
+            currentRoom = currentRoom[Direction.LEFT]
         elif choice == 'r':
-            currentRoom = currentRoom.adjacentRooms[Direction.RIGHT]
+            currentRoom = currentRoom[Direction.RIGHT]
         elif choice == 'e':
             exitGame()
         
