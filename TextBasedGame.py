@@ -101,8 +101,8 @@ class Direction(Enum):
         elif self is Direction.LEFT: return Direction.RIGHT
         else:                        return Direction.LEFT
         
-class Room:
-    """ Represents a room within the game. """
+class System:
+    """ Represents a system (room) within the game. """
     def __init__(self, name: str, item=None):
         self.name = name
         self.item = item
@@ -112,15 +112,17 @@ class Room:
                                Direction.LEFT:  None,
                                Direction.RIGHT: None  }
 
-    def __getitem__(self, direction: Direction) -> 'Room':
+    def __getitem__(self, direction: Direction) -> 'System':
+        """ Returns the adjacent system in the given direction. """
         return self.adjacentRooms[direction]
 
-    def __setitem__(self, direction: Direction, room: 'Room'):
+    def __setitem__(self, direction: Direction, room: 'System'):
+        """ Sets the adjacent system in the given direction. """
         self.adjacentRooms[direction] = room
 
-    def setAdjacent(self, direction: Direction, room: 'Room') -> 'Room':
-        """ Sets which room is located in a direction from the current room. Also sets this room's
-            position in the adjacent room. """
+    def setAdjacent(self, direction: Direction, room: 'System') -> 'System':
+        """ Sets which system is located in a direction from the current one. Also sets this system's
+            position in the adjacent one. """
         self[direction]            = room
         room[direction.opposite()] = self
         return self
@@ -135,11 +137,11 @@ def generateRequiredItems() -> List[str]:
            [ "Malware code fragment"     ] * random.randint(1, 3) + \
            [ "Vulnerability"             ] * random.randint(1, 3)
 
-def generateMap(requiredItems: List[str]) -> Room:
-    """ Generates a new game map with randomly placed rooms populated with items and the randsomeware.
-        Returns the starting room. """
+def generateMap(requiredItems: List[str]) -> System:
+    """ Generates a new game map with randomly placed systems populated with items and the 
+        randsomeware. Returns the starting system. """
     #TODO: ensure the item pool is smaller or the same size as the room pool.
-    startingRoom = Room("The Boot Loader")
+    startingSystem = System("The Boot Loader")
     itemPool = requiredItems.copy()
     roomPool = generateMap.systemRooms + generateMap.userApplications
 
@@ -147,11 +149,12 @@ def generateMap(requiredItems: List[str]) -> Room:
     random.shuffle(roomPool)
 
     for i in range(0, len(itemPool) - 1):
-        traverser = startingRoom
+        traverser = startingSystem
         previousDirection = None
         stepsLeft = 10
 
-        #TODO Does not connect existing rooms together except for the previous one. Possibly fix.
+        #TODO Does not connect existing systems together except for the previous one, resulting in
+        #   "spiky maps." Possibly fix.
         while stepsLeft >= 0:
             stepsLeft -= 1
 
@@ -175,18 +178,18 @@ def generateMap(requiredItems: List[str]) -> Room:
                     continue
 
                 traverser.setAdjacent(random.choice(possibleDirections)
-                                    , Room(roomPool[i], itemPool[i]))
+                                    , System(roomPool[i], itemPool[i]))
                 break
 
-    return startingRoom
+    return startingSystem
 
 #TODO: If no signifcant difference is made between these two then remove them.
-generateMap.systemRooms = [ "The Registry",
-                            "The Network interfaces",
-                            "The Kernal",
-                            "The Hard drive",
-                            "The Web browser"         ]
-generateMap.userApplications = [ "PainterEX",
+generateMap.computerSystems = [ "The Registry",
+                                "The Network interfaces",
+                                "The Kernal",
+                                "The Hard drive",         ]
+generateMap.userApplications = [ "WebSurfer"
+                                 "PainterEX",
                                  "BitMasher",
                                  "The ilo li sina Interpreter",
                                  "FreeWriter",
@@ -246,35 +249,35 @@ def main():
     
     # Gameloop.
     requiredItems = generateRequiredItems()
-    currentRoom = generateMap(requiredItems)
+    currentSystem = generateMap(requiredItems)
     gameMenu = OptionSelector()
 
     while True:
         clearScreen()
-        delayedPrint(currentRoom.name, center=True)
+        delayedPrint(currentSystem.name, center=True)
         delayedPrint()
         gameMenu.dumpOptions()
         #TODO: Generalize movement code if possible. Try to make dependent on names of direction enum.
-        if currentRoom[Direction.UP] is not None:
-            gameMenu.addOption('u', f"[{currentRoom[Direction.UP].name}] is (u)p above")
-        if currentRoom[Direction.DOWN] is not None:
-            gameMenu.addOption('d', f"[{currentRoom[Direction.DOWN].name}] is (d)own below")
-        if currentRoom[Direction.LEFT] is not None:
-            gameMenu.addOption('l', f"[{currentRoom[Direction.LEFT].name}] is to the (l)eft")
-        if currentRoom[Direction.RIGHT] is not None:
-            gameMenu.addOption('r', f"[{currentRoom[Direction.RIGHT].name}] is to the (r)ight")
+        if currentSystem[Direction.UP] is not None:
+            gameMenu.addOption('u', f"[{currentSystem[Direction.UP].name}] is (u)p above")
+        if currentSystem[Direction.DOWN] is not None:
+            gameMenu.addOption('d', f"[{currentSystem[Direction.DOWN].name}] is (d)own below")
+        if currentSystem[Direction.LEFT] is not None:
+            gameMenu.addOption('l', f"[{currentSystem[Direction.LEFT].name}] is to the (l)eft")
+        if currentSystem[Direction.RIGHT] is not None:
+            gameMenu.addOption('r', f"[{currentSystem[Direction.RIGHT].name}] is to the (r)ight")
         #TODO Make this exit to the start menu instead of exiting the game entirely.
         gameMenu.addOption('e', '(E)xit')
 
         choice = gameMenu.getSelection()
         if choice == 'u':
-            currentRoom = currentRoom[Direction.UP]
+            currentSystem = currentSystem[Direction.UP]
         elif choice == 'd':
-            currentRoom = currentRoom[Direction.DOWN]
+            currentSystem = currentSystem[Direction.DOWN]
         elif choice == 'l':
-            currentRoom = currentRoom[Direction.LEFT]
+            currentSystem = currentSystem[Direction.LEFT]
         elif choice == 'r':
-            currentRoom = currentRoom[Direction.RIGHT]
+            currentSystem = currentSystem[Direction.RIGHT]
         elif choice == 'e':
             exitGame()
         
