@@ -45,11 +45,10 @@ class OptionSelector:
         self.options = []
         self.messages = []
 
-    #TODO: add input checking on character code.
     def addOption(self, characterCode: str, message: str):
         """ Adds a new option. The character code is what the user will type to select that option. 
         Put only a single character, will be made lowercase if possible. """
-        self.options.append(characterCode.lower())
+        self.options.append(characterCode[0].lower())
         self.messages.append(message)
 
     def dumpOptions(self):
@@ -143,10 +142,10 @@ def generateMap(requiredItems: List[str]) -> System:
     #TODO: ensure the item pool is smaller or the same size as the room pool.
     startingSystem = System("The Boot Loader")
     itemPool = requiredItems.copy()
-    roomPool = generateMap.systemRooms + generateMap.userApplications
+    systemPool = generateMap.computerSystems + generateMap.userApplications
 
     random.shuffle(itemPool)
-    random.shuffle(roomPool)
+    random.shuffle(systemPool)
 
     for i in range(0, len(itemPool) - 1):
         traverser = startingSystem
@@ -178,7 +177,7 @@ def generateMap(requiredItems: List[str]) -> System:
                     continue
 
                 traverser.setAdjacent(random.choice(possibleDirections)
-                                    , System(roomPool[i], itemPool[i]))
+                                    , System(systemPool[i], itemPool[i]))
                 break
 
     return startingSystem
@@ -199,8 +198,11 @@ generateMap.userApplications = [ "WebSurfer"
                                  "MacroDoi",
                                  "Conway's Ivory Tower"         ]
 
-def main():
-    # Start menu.
+
+
+def startMenu():
+    """ Displays the start menu to the player. Player can exit the game from the menu. Returns when
+        the user decides to play."""
     startMenu = OptionSelector()
     startMenu.addOption('p', centerMessage("(P)lay"))
     startMenu.addOption('i', centerMessage("(I)nstructions"))
@@ -245,9 +247,11 @@ def main():
             delayedPrint("Press ENTER to contiune.", center=True); input()
 
         elif choice == 'p':
-            break
-    
-    # Gameloop.
+            return
+
+def runGame():
+    """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
+        leave or they fail/complete it. """
     requiredItems = generateRequiredItems()
     currentSystem = generateMap(requiredItems)
     gameMenu = OptionSelector()
@@ -279,8 +283,14 @@ def main():
         elif choice == 'r':
             currentSystem = currentSystem[Direction.RIGHT]
         elif choice == 'e':
-            exitGame()
-        
+            return
 
+def main():
+    # When the player exits a running game the start menu should come up, but when they exit from the
+    #   start menu it closes this program, so we can just use an infinite loop.
+    while True: 
+        startMenu()
+        runGame()
+    
 if __name__ == '__main__':
     main()
