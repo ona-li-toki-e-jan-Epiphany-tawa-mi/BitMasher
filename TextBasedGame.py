@@ -21,11 +21,23 @@ def centerMessage(message: str) -> str:
     """ Returns message with the spacing required to appear centered in the terminal. """
     return message.center(get_terminal_size().columns)
 
-#TODO: make delay operate truly line-per-line.
 def delayedPrint(message: str='', end: str='\n', center: bool=False):
     """ Used to give a slow-scroll effect akin to old computers like the Commodore 64 and Apple II. """
-    sleep(0.15)
-    print(message if not center else centerMessage(message), end=end)
+    screenWidth = get_terminal_size().columns
+    remaining = 0
+
+    # Attempts to split text up line-by-line in the case of strings longer than a line.
+    while True:
+        sleep(0.15)
+        messageChunk = message[remaining:remaining + screenWidth]
+        print(messageChunk if not center else centerMessage(messageChunk), end='')
+
+        remaining += screenWidth
+        if remaining >= len(message):
+            break
+
+    print(end=end)
+
 
 def clearScreen():
     """ Clears the terminal. """
@@ -270,7 +282,6 @@ def runGame():
             gameMenu.addOption('l', f"[{currentSystem[Direction.LEFT].name}] is to the (l)eft")
         if currentSystem[Direction.RIGHT] is not None:
             gameMenu.addOption('r', f"[{currentSystem[Direction.RIGHT].name}] is to the (r)ight")
-        #TODO Make this exit to the start menu instead of exiting the game entirely.
         gameMenu.addOption('e', '(E)xit')
 
         choice = gameMenu.getSelection()
