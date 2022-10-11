@@ -8,12 +8,12 @@ BitMasher, a text adventure game where you act as an antiviris attempting to rid
 """
 
 import os
-from enum import Enum, auto
 import random
+from enum import Enum, auto
 from shutil import get_terminal_size
 from sys import exit
 from time import sleep
-from typing import List
+from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 
 
 
@@ -48,6 +48,8 @@ class OptionSelector:
         
         Use addOption() to set up the menu, and then use getSelection() to have the user select 
         something. """
+    options:  List[str]
+    messages: List[str]
 
     def __init__(self):
         self.options = []
@@ -55,7 +57,8 @@ class OptionSelector:
 
     def addOption(self, characterCode: str, message: str):
         """ Adds a new option. The character code is what the user will type to select that option. 
-        Put only a single character, will be made lowercase if possible. """
+            Put only a single character, will be made lowercase if possible. Options are displayed in 
+            the order they are added."""
         self.options.append(characterCode[0].lower())
         self.messages.append(message)
 
@@ -84,9 +87,72 @@ class OptionSelector:
 
 
 
+class ItemType(Enum):
+    """ Represents the various types of items that can be collected. Also is used to represent the 
+        ransomware on the map."""
+    FULL_MEMORY_READ_ACCESS  = "Full memory read access"
+    FULL_MEMORY_WRITE_ACCESS = "Full memory write access"
+    POINTER_DEREFERENCER     = "Pointer dereferencer"
+    OS_OVERRIDE_CAPABILITY   = "OS override capability"
+    RANSOMWARE_CODE_FRAGMENT = "Ransomware code fragment"
+    VULNERABILITY            = "Vulnerability"
+    RANSOMWARE               = '' # The ransomware is stored on the map as an item since there is not
+                                  #     going to be an item in that room anyways.
+
+class Inventory:
+    """ Used to represent a set of items along with the amount of each item stored. """
+    items: Dict[ItemType, int]
+
+    def __init__(self):
+        self.items = {}
+
+    def addItem(self, item: ItemType, count: int=1):
+        """ Adds the given item to the inventory. """
+        try:
+            self.items[item] += count
+        except KeyError:
+            self.items[item] = count
+
+    def tryRemoveItem(self, item: ItemType, count: int=1) -> bool:
+        """ Attempts to remove the given item from the inventory. If the item is not present or the 
+            number to remove exceeds the amount stored within, this does nothing and returns false.
+            If the items were removed, this returns true."""
+        if not self.items or self.items[item] < count:
+            return False
+
+        self.items[item] -= count
+        if self.items[item] == 0:
+            del self.items[item]
+
+        return True
+
+    def __iter__(self) -> Iterable[Tuple[ItemType, int]]:
+        """ Allows iterating through the items and their counts. """
+        for each in self.items.items():
+            yield each
+
+    def toItemList(self) -> List[ItemType]:
+        """ Takes all of the items and places them in a single list. Multiple items of the same type
+            will be dupicated. """
+        itemList = []
+        for item, count in self:
+            for i in range(0, count):
+                itemList.append(item)
+
+        return itemList
+
+    def isEmpty(self) -> bool:
+        return not self.items
+
+
+
 class Fighter:
     """ Represents a fighter in a battle, complete with health, damage, and digital bloodlust. """
-    def __init__(self, initialHealth: int, damage: int, isInvulnerable: bool):
+    health:         int
+    damage:         int
+    isInvulnerable: bool
+
+    def __init__(self, initialHealth: int, damage: int, isInvulnerable: bool=False):
         self.health         = initialHealth
         self.damage         = damage
         self.isInvulnerable = isInvulnerable
@@ -99,10 +165,10 @@ class Fighter:
         victim.health -= self.damage
         return self.damage
 
-    def isDead(self):
+    def isDead(self) -> bool:
         return self.health <= 0
 
-def doRansomwareBattle(requiredItemsLeft: List[str]):
+def doRansomwareBattle(requiredItemsLeft: Inventory):
     """ Plays out the turn-based fight against the ransomware. """
     def moveDelay():
         """ Applies a short delay and prints a newline, which is done before every move in turn-based
@@ -111,8 +177,8 @@ def doRansomwareBattle(requiredItemsLeft: List[str]):
         delayedPrint()
 
     #TODO: set stats based on missing items.
-    player = Fighter(100, 15, False)
-    ransomware = Fighter(100, 10, requiredItemsLeft != 0)
+    player = Fighter(100, 15)
+    ransomware = Fighter(100, 10, not requiredItemsLeft.isEmpty())
 
     fightMenu = OptionSelector()
     fightMenu.addOption('a', "(A)ttack")
@@ -203,7 +269,11 @@ class Direction(Enum):
         
 class System:
     """ Represents a system (room) within the game. """
-    def __init__(self, name: str, item=None):
+    name:          str
+    item:          Union[ItemType, None]
+    adjacentRooms: Dict[Direction, Union['System', None]]
+
+    def __init__(self, name: str, item: Union[ItemType, None] = None):
         self.name = name
         self.item = item
 
@@ -212,35 +282,34 @@ class System:
                                Direction.LEFT:  None,
                                Direction.RIGHT: None  }
 
-    def __getitem__(self, direction: Direction) -> 'System':
+    def __getitem__(self, direction: Direction) -> Union['System', None]:
         """ Returns the adjacent system in the given direction. """
         return self.adjacentRooms[direction]
 
-    def __setitem__(self, direction: Direction, room: 'System'):
+    def __setitem__(self, direction: Direction, room: Union['System', None]):
         """ Sets the adjacent system in the given direction. """
         self.adjacentRooms[direction] = room
 
-    def setAdjacent(self, direction: Direction, room: 'System') -> 'System':
+    def setAdjacent(self, direction: Direction, room: 'System'):
         """ Sets which system is located in a direction from the current one. Also sets this system's
             position in the adjacent one. """
         self[direction]            = room
         room[direction.opposite()] = self
-        return self
 
 
 
-def generateMap(requiredItems: List[str]) -> System:
+def generateMap(requiredItems: Inventory) -> System:
     """ Generates a new game map with randomly placed systems populated with items and the 
         randsomeware. Returns the starting system. """
     #TODO: ensure the item pool is smaller or the same size as the room pool.
     startingSystem = System("The Boot Loader")
-    itemPool = requiredItems.copy()
+    itemPool = requiredItems.toItemList()
     systemPool = generateMap.systems.copy()
 
     random.shuffle(itemPool)
-    itemPool.append("The Ransomware") # We append the ransomware after the items have been shuffled as
-                                      #     it needs to be generated last to ensure that there is a 
-                                      #     path to every item, that it is not blocked by it.
+    itemPool.append(ItemType.RANSOMWARE) # We append the ransomware after the items have been shuffled as
+                                         #     it needs to be generated last to ensure that there is a 
+                                         #     path to every item, that it is not blocked by it.
     random.shuffle(systemPool)
 
     # All requried items must be generated, but not all rooms, thus we iterate through each item and
@@ -260,7 +329,7 @@ def generateMap(requiredItems: List[str]) -> System:
                 possibleDirections = [direction for direction in list(Direction) 
                                       if traverser[direction] is not None and
                                          direction is not previousDirection]
-                if len(possibleDirections) == 0:
+                if not possibleDirections:
                     stepsLeft += 1
                     continue
 
@@ -271,7 +340,7 @@ def generateMap(requiredItems: List[str]) -> System:
             else:
                 possibleDirections = [direction for direction in list(Direction) 
                                       if traverser[direction] is None]
-                if len(possibleDirections) == 0:
+                if not possibleDirections:
                     stepsLeft += 1
                     continue
 
@@ -298,35 +367,39 @@ generateMap.systems = [ "The Registry",
 
 
 
-def generateRequiredItems() -> List[str]:
+def generateRequiredItems() -> Inventory:
     """ Generates a list of the items that must be gathered to defeat the ransomware. """
-    return [ "Full memory read access",
-             "Full memory write access",
-             "Pointer dereferencer",
-             "OS override capability"    ] + \
-           [ "Malware code fragment"     ] * random.randint(1, 3) + \
-           [ "Vulnerability"             ] * random.randint(1, 3)
+    requiredItems = Inventory()
+    
+    requiredItems.addItem(ItemType.FULL_MEMORY_READ_ACCESS)
+    requiredItems.addItem(ItemType.FULL_MEMORY_WRITE_ACCESS)
+    requiredItems.addItem(ItemType.POINTER_DEREFERENCER)
+    requiredItems.addItem(ItemType.OS_OVERRIDE_CAPABILITY)
+    requiredItems.addItem(ItemType.RANSOMWARE_CODE_FRAGMENT, count=random.randint(1, 3))
+    requiredItems.addItem(ItemType.VULNERABILITY,            count=random.randint(1, 3))
 
-def displayInventory(inventory: List[str], requiredItems: List[str]):
+    return requiredItems
+
+def displayInventory(inventory: Inventory, requiredItems: Inventory):
     """ Displays the items the player has and the items that still need to be collected. Will return
         once they decide to leave the inventory menu. """
     clearScreen()
     delayedPrint("Inventory:", center=True)
     delayedPrint()
-    if len(inventory) == 0:
+    if inventory.isEmpty():
         delayedPrint("Empty...", center=True)
     else:
-        for item in inventory:
-            delayedPrint(f"- {item}", center=True)
+        for item, count in inventory:
+            delayedPrint(f"- {item.value}: {count}", center=True)
 
     delayedPrint()
     delayedPrint("Remaining Items:", center=True)
     delayedPrint()
-    if len(requiredItems) == 0:
+    if requiredItems.isEmpty():
         delayedPrint("Everything needed has been found...", center=True)
     else:
-        for item in requiredItems:
-            delayedPrint(f"- {item}", center=True)
+        for item, count in requiredItems:
+            delayedPrint(f"- {item.value}: {count}", center=True)
     
     delayedPrint()
     delayedPrint("Press ENTER to continue", center=True); input()
@@ -338,17 +411,16 @@ def runGame():
     currentSystem = generateMap(requiredItems)
     gameMenu = OptionSelector()
 
-    inventory = []
+    inventory = Inventory()
 
     while True:
+        if currentSystem.item is ItemType.RANSOMWARE:
+            doRansomwareBattle(requiredItems)
+            break # Once the battle is over, the player either won or lost, so the game can be ended.
+
         clearScreen()
         delayedPrint(currentSystem.name, center=True)
         delayedPrint()
-
-        #TODO: make this some kind of variable or something more robust than checking the name.
-        if currentSystem.item == "The Ransomware":
-            doRansomwareBattle(requiredItems)
-            break
 
         gameMenu.dumpOptions()
         #TODO: Generalize movement code if possible. Try to make dependent on names of direction enum.
@@ -361,7 +433,7 @@ def runGame():
         if currentSystem[Direction.RIGHT] is not None:
             gameMenu.addOption('r', f"[{currentSystem[Direction.RIGHT].name}] is to the (r)ight")
         if currentSystem.item is not None:
-            gameMenu.addOption('t', f"There is a [{currentSystem.item}]. (T)ake it?")
+            gameMenu.addOption('t', f"There is a [{currentSystem.item.value}]. (T)ake it?")
 
         gameMenu.addOption('i', 'Open the (I)nventory')
         gameMenu.addOption('e', '(E)xit game')
@@ -378,8 +450,8 @@ def runGame():
             currentSystem = currentSystem[Direction.RIGHT]
 
         elif choice == 't':
-            inventory.append(currentSystem.item)
-            requiredItems.remove(currentSystem.item)
+            inventory.addItem(currentSystem.item)
+            requiredItems.tryRemoveItem(currentSystem.item)
             currentSystem.item = None
 
         elif choice == 'i':
@@ -450,7 +522,7 @@ def startMenu():
 
 
 
-def main():
+def main() -> NoReturn:
     # When the player exits a running game the start menu should come up, but when they exit from the
     #   start menu it closes this program, so we can just use an infinite loop.
     while True: 
