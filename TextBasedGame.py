@@ -83,14 +83,107 @@ class OptionSelector:
             return choice
 
 
-def exitGame():
-    """ Displays an exiting message and then exits. """
-    delayedPrint("Exiting", end='')
-    delayedPrint(".", end='')
-    delayedPrint(".", end='')
-    delayedPrint(".")
 
-    exit(0)
+class Fighter:
+    """ Represents a fighter in a battle, complete with health, damage, and digital bloodlust. """
+    def __init__(self, initialHealth: int, damage: int, isInvulnerable: bool):
+        self.health         = initialHealth
+        self.damage         = damage
+        self.isInvulnerable = isInvulnerable
+
+    def attack(self, victim: 'Fighter') -> int:
+        """ Applies self's damage to the victim, reducing their health and returning the damage done. """
+        if victim.isInvulnerable:
+            return 0 
+
+        victim.health -= self.damage
+        return self.damage
+
+    def isDead(self):
+        return self.health <= 0
+
+def doRansomwareBattle(requiredItemsLeft: List[str]):
+    """ Plays out the turn-based fight against the ransomware. """
+    def moveDelay():
+        """ Applies a short delay and prints a newline, which is done before every move in turn-based
+            combat to make it feel more like... combat. """
+        sleep(0.7)
+        delayedPrint()
+
+    #TODO: set stats based on missing items.
+    player = Fighter(100, 15, False)
+    ransomware = Fighter(100, 10, requiredItemsLeft != 0)
+
+    fightMenu = OptionSelector()
+    fightMenu.addOption('a', "(A)ttack")
+    fightMenu.addOption('r', "(R)un away")
+    fightMenu.addOption('d', "Do a funny (d)ance")
+    fightMenu.addOption('e', "(E)xit game")
+
+    while True:
+        clearScreen()
+        delayedPrint("The Ransomware", center=True)
+        delayedPrint()
+        delayedPrint(f"Your health: {player.health}")
+        delayedPrint(f"Ransomware's health: {ransomware.health}")
+        delayedPrint()
+
+        choice = fightMenu.getSelection()
+        if choice == 'a':
+            moveDelay()
+            delayedPrint("You go on the attack...")
+            moveDelay()
+            damage = player.attack(ransomware)
+            delayedPrint(f"You attack for {damage} health ({ransomware.health} remaining)")
+
+            if ransomware.isDead():
+                moveDelay()
+                delayedPrint("You win!")
+                delayedPrint()
+                delayedPrint("Press ENTER to contiune"); input()
+                break
+
+        elif choice == 'r':
+            moveDelay()
+            delayedPrint("You try running away...")
+            moveDelay()
+            delayedPrint("But there is no exit")
+
+        elif choice == 'd':
+            moveDelay()
+            delayedPrint("You do a funny dance...")
+            moveDelay()
+            damage = player.attack(player)
+            delayedPrint(f"You accidentally hit yourself for {damage} health ({player.health} remaining)")
+
+            if player.isDead():
+                moveDelay()
+                delayedPrint()
+                delayedPrint("TODO: add easter egg here")
+                delayedPrint("Well anyways you lost lol")
+                delayedPrint()
+                delayedPrint("Press ENTER to continue"); input()
+                break
+
+        elif choice == 'e':
+            break
+        
+        moveDelay()
+        delayedPrint("The ransomware goes on the attack...")
+        moveDelay()
+        damage = ransomware.attack(player)
+        delayedPrint(f"You were attacked for {ransomware.damage} health ({player.health} remaining)")
+
+        if player.isDead():
+            moveDelay()
+            delayedPrint("You lose!")
+            delayedPrint()
+            delayedPrint("Press ENTER to contiune"); input()
+            break
+
+        moveDelay()
+        delayedPrint("Press ENTER to contiune"); input()
+
 
 
 class Direction(Enum):
@@ -135,14 +228,6 @@ class System:
         return self
 
 
-def generateRequiredItems() -> List[str]:
-    """ Generates a list of the items that must be gathered to defeat the ransomware. """
-    return [ "Full memory read access",
-             "Full memory write access",
-             "Pointer dereferencer",
-             "OS override capability"    ] + \
-           [ "Malware code fragment"     ] * random.randint(1, 3) + \
-           [ "Vulnerability"             ] * random.randint(1, 3)
 
 def generateMap(requiredItems: List[str]) -> System:
     """ Generates a new game map with randomly placed systems populated with items and the 
@@ -150,7 +235,7 @@ def generateMap(requiredItems: List[str]) -> System:
     #TODO: ensure the item pool is smaller or the same size as the room pool.
     startingSystem = System("The Boot Loader")
     itemPool = requiredItems.copy()
-    systemPool = generateMap.computerSystems + generateMap.userApplications
+    systemPool = generateMap.systems.copy()
 
     random.shuffle(itemPool)
     itemPool.append("The Ransomware") # We append the ransomware after the items have been shuffled as
@@ -196,23 +281,123 @@ def generateMap(requiredItems: List[str]) -> System:
 
     return startingSystem
 
-#TODO: If no signifcant difference is made between these two then remove them.
-generateMap.computerSystems = [ "The Registry",
-                                "The Network interfaces",
-                                "The Kernal",
-                                "The Hard drive",         ]
-generateMap.userApplications = [ "WebSurfer",
-                                 "PainterEX",
-                                 "BitMasher",
-                                 "The ilo li sina Interpreter",
-                                 "FreeWriter",
-                                 "PIMG",
-                                 "The Espresso Runtime Enviroment",
-                                 "SuperCAD",
-                                 "MacroDoi",
-                                 "Conway's Ivory Tower"             ]
+generateMap.systems = [ "The Registry",
+                        "The Network interfaces",
+                        "The Kernal",
+                        "The Hard drive",         
+                        "WebSurfer",
+                        "PainterEX",
+                        "BitMasher",
+                        "The ilo li sina Interpreter",
+                        "FreeWriter",
+                        "PIMG",
+                        "The Espresso Runtime Enviroment",
+                        "SuperCAD",
+                        "MacroDoi",
+                        "Conway's Ivory Tower"             ]
 
 
+
+def generateRequiredItems() -> List[str]:
+    """ Generates a list of the items that must be gathered to defeat the ransomware. """
+    return [ "Full memory read access",
+             "Full memory write access",
+             "Pointer dereferencer",
+             "OS override capability"    ] + \
+           [ "Malware code fragment"     ] * random.randint(1, 3) + \
+           [ "Vulnerability"             ] * random.randint(1, 3)
+
+def displayInventory(inventory: List[str], requiredItems: List[str]):
+    """ Displays the items the player has and the items that still need to be collected. Will return
+        once they decide to leave the inventory menu. """
+    clearScreen()
+    delayedPrint("Inventory:", center=True)
+    delayedPrint()
+    if len(inventory) == 0:
+        delayedPrint("Empty...", center=True)
+    else:
+        for item in inventory:
+            delayedPrint(f"- {item}", center=True)
+
+    delayedPrint()
+    delayedPrint("Remaining Items:", center=True)
+    delayedPrint()
+    if len(requiredItems) == 0:
+        delayedPrint("Everything needed has been found...", center=True)
+    else:
+        for item in requiredItems:
+            delayedPrint(f"- {item}", center=True)
+    
+    delayedPrint()
+    delayedPrint("Press ENTER to continue", center=True); input()
+
+def runGame():
+    """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
+        leave or they fail/complete it. """
+    requiredItems = generateRequiredItems()
+    currentSystem = generateMap(requiredItems)
+    gameMenu = OptionSelector()
+
+    inventory = []
+
+    while True:
+        clearScreen()
+        delayedPrint(currentSystem.name, center=True)
+        delayedPrint()
+
+        #TODO: make this some kind of variable or something more robust than checking the name.
+        if currentSystem.item == "The Ransomware":
+            doRansomwareBattle(requiredItems)
+            break
+
+        gameMenu.dumpOptions()
+        #TODO: Generalize movement code if possible. Try to make dependent on names of direction enum.
+        if currentSystem[Direction.UP] is not None:
+            gameMenu.addOption('u', f"[{currentSystem[Direction.UP].name}] is (u)p above")
+        if currentSystem[Direction.DOWN] is not None:
+            gameMenu.addOption('d', f"[{currentSystem[Direction.DOWN].name}] is (d)own below")
+        if currentSystem[Direction.LEFT] is not None:
+            gameMenu.addOption('l', f"[{currentSystem[Direction.LEFT].name}] is to the (l)eft")
+        if currentSystem[Direction.RIGHT] is not None:
+            gameMenu.addOption('r', f"[{currentSystem[Direction.RIGHT].name}] is to the (r)ight")
+        if currentSystem.item is not None:
+            gameMenu.addOption('t', f"There is a [{currentSystem.item}]. (T)ake it?")
+
+        gameMenu.addOption('i', 'Open the (I)nventory')
+        gameMenu.addOption('e', '(E)xit game')
+
+        choice = gameMenu.getSelection()
+
+        if choice == 'u':
+            currentSystem = currentSystem[Direction.UP]
+        elif choice == 'd':
+            currentSystem = currentSystem[Direction.DOWN]
+        elif choice == 'l':
+            currentSystem = currentSystem[Direction.LEFT]
+        elif choice == 'r':
+            currentSystem = currentSystem[Direction.RIGHT]
+
+        elif choice == 't':
+            inventory.append(currentSystem.item)
+            requiredItems.remove(currentSystem.item)
+            currentSystem.item = None
+
+        elif choice == 'i':
+            displayInventory(inventory, requiredItems)
+
+        elif choice == 'e':
+            return
+
+
+
+def exitGame():
+    """ Displays an exiting message and then exits. """
+    delayedPrint("Exiting", end='')
+    delayedPrint(".", end='')
+    delayedPrint(".", end='')
+    delayedPrint(".")
+
+    exit(0)
 
 def startMenu():
     """ Displays the start menu to the player. Player can exit the game from the menu. Returns when
@@ -263,182 +448,7 @@ def startMenu():
         elif choice == 'p':
             return
 
-def displayInventory(inventory: List[str], requiredItems: List[str]):
-    """ Displays the items the player has and the items that still need to be collected. Will return
-        once they decide to leave the inventory menu. """
-    clearScreen()
-    delayedPrint("Inventory:", center=True)
-    delayedPrint()
-    if len(inventory) == 0:
-        delayedPrint("Empty...", center=True)
-    else:
-        for item in inventory:
-            delayedPrint(f"- {item}", center=True)
 
-    delayedPrint()
-    delayedPrint("Remaining Items:", center=True)
-    delayedPrint()
-    if len(requiredItems) == 0:
-        delayedPrint("Everything needed has been found...", center=True)
-    else:
-        for item in requiredItems:
-            delayedPrint(f"- {item}", center=True)
-    
-    delayedPrint()
-    delayedPrint("Press ENTER to continue", center=True); input()
-
-class Fighter:
-    """ Represents a fighter in a battle, complete with health, damage, and digital bloodlust. """
-    def __init__(self, initialHealth: int, damage: int, isInvulnerable: bool):
-        self.health         = initialHealth
-        self.damage         = damage
-        self.isInvulnerable = isInvulnerable
-
-    def attack(self, victim: 'Fighter') -> int:
-        """ Applies self's damage to the victim, reducing their health and returning the damage done. """
-        if victim.isInvulnerable:
-            return 0 
-
-        victim.health -= self.damage
-        return self.damage
-
-    def isDead(self):
-        return self.health <= 0
-
-def doRansomwareBattle(requiredItemsLeft: List[str]):
-    """ Plays out the turn-based fight against the ransomware. """
-    def moveDelay():
-        """ Applies a short delay and prints a newline, which is done before every move in turn-based
-            combat to make it feel more like... combat. """
-        sleep(0.7)
-        delayedPrint()
-
-    #TODO: set stats based on missing items.
-    player = Fighter(100, 15, False)
-    ransomware = Fighter(100, 10, requiredItemsLeft != 0)
-
-    fightMenu = OptionSelector()
-    fightMenu.addOption('a', "(A)ttack")
-    fightMenu.addOption('r', "(R)un away")
-    fightMenu.addOption('d', "Do a funny (d)ance")
-
-    while True:
-        clearScreen()
-        delayedPrint("The Ransomware", center=True)
-        delayedPrint()
-        delayedPrint(f"Your health: {player.health}")
-        delayedPrint(f"Ransomware's health: {ransomware.health}")
-        delayedPrint()
-
-        choice = fightMenu.getSelection()
-        if choice == 'a':
-            moveDelay()
-            delayedPrint("You go on the attack...")
-            moveDelay()
-            damage = player.attack(ransomware)
-            delayedPrint(f"You attack for {damage} health ({ransomware.health} remaining)")
-
-            if ransomware.isDead():
-                moveDelay()
-                delayedPrint("You win!")
-                delayedPrint()
-                delayedPrint("Press ENTER to contiune"); input()
-                break
-
-        elif choice == 'r':
-            moveDelay()
-            delayedPrint("You try running away...")
-            moveDelay()
-            delayedPrint("But there is no exit")
-
-        elif choice == 'd':
-            moveDelay()
-            delayedPrint("You do a funny dance...")
-            moveDelay()
-            damage = player.attack(player)
-            delayedPrint(f"You accidentally hit yourself for {damage} health ({player.health} remaining)")
-
-            if player.isDead():
-                moveDelay()
-                delayedPrint()
-                delayedPrint("TODO: add easter egg here")
-                delayedPrint("Well anyways you lost lol")
-                delayedPrint()
-                delayedPrint("Press ENTER to continue"); input()
-                break
-        
-        moveDelay()
-        delayedPrint("The ransomware goes on the attack...")
-        moveDelay()
-        damage = ransomware.attack(player)
-        delayedPrint(f"You were attacked for {ransomware.damage} health ({player.health} remaining)")
-
-        if player.isDead():
-            moveDelay()
-            delayedPrint("You lose!")
-            delayedPrint()
-            delayedPrint("Press ENTER to contiune"); input()
-            break
-
-        moveDelay()
-        delayedPrint("Press ENTER to contiune"); input()
-
-def runGame():
-    """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
-        leave or they fail/complete it. """
-    requiredItems = generateRequiredItems()
-    currentSystem = generateMap(requiredItems)
-    gameMenu = OptionSelector()
-
-    inventory = []
-
-    while True:
-        clearScreen()
-        delayedPrint(currentSystem.name, center=True)
-        delayedPrint()
-
-        #TODO: make this some kind of variable or something more robust than checking the name.
-        if currentSystem.item == "The Ransomware":
-            doRansomwareBattle(requiredItems)
-            break
-
-        gameMenu.dumpOptions()
-        #TODO: Generalize movement code if possible. Try to make dependent on names of direction enum.
-        if currentSystem[Direction.UP] is not None:
-            gameMenu.addOption('u', f"[{currentSystem[Direction.UP].name}] is (u)p above")
-        if currentSystem[Direction.DOWN] is not None:
-            gameMenu.addOption('d', f"[{currentSystem[Direction.DOWN].name}] is (d)own below")
-        if currentSystem[Direction.LEFT] is not None:
-            gameMenu.addOption('l', f"[{currentSystem[Direction.LEFT].name}] is to the (l)eft")
-        if currentSystem[Direction.RIGHT] is not None:
-            gameMenu.addOption('r', f"[{currentSystem[Direction.RIGHT].name}] is to the (r)ight")
-        if currentSystem.item is not None:
-            gameMenu.addOption('t', f"There is a [{currentSystem.item}]. (T)ake it?")
-
-        gameMenu.addOption('i', 'Open the (I)nventory')
-        gameMenu.addOption('e', '(E)xit')
-
-        choice = gameMenu.getSelection()
-
-        if choice == 'u':
-            currentSystem = currentSystem[Direction.UP]
-        elif choice == 'd':
-            currentSystem = currentSystem[Direction.DOWN]
-        elif choice == 'l':
-            currentSystem = currentSystem[Direction.LEFT]
-        elif choice == 'r':
-            currentSystem = currentSystem[Direction.RIGHT]
-
-        elif choice == 't':
-            inventory.append(currentSystem.item)
-            requiredItems.remove(currentSystem.item)
-            currentSystem.item = None
-
-        elif choice == 'i':
-            displayInventory(inventory, requiredItems)
-
-        elif choice == 'e':
-            return
 
 def main():
     # When the player exits a running game the start menu should come up, but when they exit from the
