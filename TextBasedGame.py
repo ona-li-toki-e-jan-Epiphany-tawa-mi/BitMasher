@@ -57,13 +57,17 @@ class OptionSelector:
 
     def addOption(self, characterCode: str, message: str):
         """ Adds a new option. The character code is what the user will type to select that option. 
-            Put only a single character, will be made lowercase if possible. Options are displayed in 
-            the order they are added."""
+            Put only a single character, will be made lowercase if possible. Options and messages are 
+            displayed in the order they are added."""
         self.options.append(characterCode[0].lower())
         self.messages.append(message)
 
+    def addMessage(self, message: str):
+        """ Adds a new message. Messages and options are displayed in the order they are added."""
+        self.messages.append(message)
+
     def dumpOptions(self):
-        """ Removes all added options. """
+        """ Removes all added options and messages. """
         self.options.clear()
         self.messages.clear()
 
@@ -87,6 +91,7 @@ class OptionSelector:
 
 
 
+#TODO: add NONE type.
 class ItemType(Enum):
     """ Represents the various types of items that can be collected. Also is used to represent the 
         ransomware on the map."""
@@ -181,10 +186,10 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
     ransomware = Fighter(100, 10, not requiredItemsLeft.isEmpty())
 
     fightMenu = OptionSelector()
-    fightMenu.addOption('a', "(A)ttack")
-    fightMenu.addOption('r', "(R)un away")
-    fightMenu.addOption('d', "Do a funny (d)ance")
-    fightMenu.addOption('e', "(E)xit game")
+    fightMenu.addOption('a', "(A)TTACK")
+    fightMenu.addOption('r', "(R)UN away")
+    fightMenu.addOption('d', "Do a funny (D)ANCE")
+    fightMenu.addOption('e', "(E)XIT game")
 
     while True:
         clearScreen()
@@ -252,6 +257,14 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
 
 
 
+class ScanResult(Enum):
+    """ Represents the result of scanning a room to find what's inside."""
+    EMPTY     = auto()
+    ABNORMAL  = auto()
+    SUSPICOUS = auto()
+    ERROR     = auto()
+    NONE      = auto()
+
 class Direction(Enum):
     """ Represents a physical direction in which to travel. """
     UP = auto()
@@ -271,11 +284,13 @@ class System:
     """ Represents a system (room) within the game. """
     name:          str
     item:          Union[ItemType, None]
+    scanResult:    ScanResult
     adjacentRooms: Dict[Direction, Union['System', None]]
 
     def __init__(self, name: str, item: Union[ItemType, None] = None):
         self.name = name
         self.item = item
+        self.scanResult = ScanResult.NONE
 
         self.adjacentRooms = { Direction.UP:    None,
                                Direction.DOWN:  None,
@@ -295,6 +310,42 @@ class System:
             position in the adjacent one. """
         self[direction]            = room
         room[direction.opposite()] = self
+
+    def __iter__(self) -> Iterable[Tuple[Direction, Union['System', None]]]:
+        """ Allows iterating through the adjacent rooms and the directions they are in. """
+        for each in self.adjacentRooms.items():
+            yield each
+
+    def tryScan(self, canFail: bool=True) -> ScanResult:
+        """ Attemps to scan the system. Will overwrite previous result. Has small chance to fail if
+            canFail is left true. The new result is also returned. """
+        scanResult = None
+
+        if canFail and random.random() <= 0.1: 
+            scanResult = ScanResult.ERROR
+        elif self.item is ItemType.RANSOMWARE: 
+            scanResult = ScanResult.SUSPICOUS
+        elif self.item is not None: 
+            scanResult = ScanResult.ABNORMAL
+        else:                         
+            scanResult = ScanResult.EMPTY
+
+        self.scanResult = scanResult
+        return scanResult
+
+    def tryAppendScanResult(self, message: str) -> str:
+        """ Appends text containing a human-readable scan result to the given message. Used to show
+            the result when printing the current and nearby systems."""
+        if self.scanResult is ScanResult.NONE:
+            return message
+
+        result = None
+        if   self.scanResult is ScanResult.ERROR:     result = "[ERROR]"
+        elif self.scanResult is ScanResult.SUSPICOUS: result = "Abnormal. Suspicous activity"
+        elif self.scanResult is ScanResult.ABNORMAL:  result = "Abnormal"
+        elif self.scanResult is ScanResult.EMPTY:     result = "Empty"
+
+        return f"{message} (scan: {result})"
 
 
 
@@ -419,24 +470,31 @@ def runGame():
             break # Once the battle is over, the player either won or lost, so the game can be ended.
 
         clearScreen()
-        delayedPrint(currentSystem.name, center=True)
+        currentSystem.tryScan(canFail=False)
+        delayedPrint(currentSystem.tryAppendScanResult(currentSystem.name), center=True)
         delayedPrint()
 
         gameMenu.dumpOptions()
         #TODO: Generalize movement code if possible. Try to make dependent on names of direction enum.
         if currentSystem[Direction.UP] is not None:
-            gameMenu.addOption('u', f"[{currentSystem[Direction.UP].name}] is (u)p above")
+            gameMenu.addOption('u', currentSystem[Direction.UP].tryAppendScanResult(
+                    f"[{currentSystem[Direction.UP].name}] is (U)P above"))
         if currentSystem[Direction.DOWN] is not None:
-            gameMenu.addOption('d', f"[{currentSystem[Direction.DOWN].name}] is (d)own below")
+            gameMenu.addOption('d', currentSystem[Direction.DOWN].tryAppendScanResult(
+                    f"[{currentSystem[Direction.DOWN].name}] is (D)OWN below"))
         if currentSystem[Direction.LEFT] is not None:
-            gameMenu.addOption('l', f"[{currentSystem[Direction.LEFT].name}] is to the (l)eft")
+            gameMenu.addOption('l', currentSystem[Direction.LEFT].tryAppendScanResult(
+                    f"[{currentSystem[Direction.LEFT].name}] is to the (L)EFT"))
         if currentSystem[Direction.RIGHT] is not None:
-            gameMenu.addOption('r', f"[{currentSystem[Direction.RIGHT].name}] is to the (r)ight")
+            gameMenu.addOption('r', currentSystem[Direction.RIGHT].tryAppendScanResult(
+                    f"[{currentSystem[Direction.RIGHT].name}] is to the (R)IGHT"))
         if currentSystem.item is not None:
-            gameMenu.addOption('t', f"There is a [{currentSystem.item.value}]. (T)ake it?")
+            gameMenu.addOption('t', f"There is a [{currentSystem.item.value}]. (T)AKE it?")
 
-        gameMenu.addOption('i', 'Open the (I)nventory')
-        gameMenu.addOption('e', '(E)xit game')
+        gameMenu.addMessage('')
+        gameMenu.addOption('s', '(S)CAN the neighboring systems')
+        gameMenu.addOption('i', 'Open the (I)NVENTORY')
+        gameMenu.addOption('e', '(E)XIT game')
 
         choice = gameMenu.getSelection()
 
@@ -453,6 +511,34 @@ def runGame():
             inventory.addItem(currentSystem.item)
             requiredItems.tryRemoveItem(currentSystem.item)
             currentSystem.item = None
+
+        elif choice == 's':
+            delayedPrint()
+            delayedPrint("Scanning...")
+            sleep(0.8)
+            delayedPrint()
+
+            for direction, system in currentSystem:
+                if system is None: 
+                    continue
+
+                result = system.tryScan()
+                systemDescription = None
+
+                if   result is ScanResult.ERROR:    
+                     systemDescription = "[ERROR]. Warning: possible inconclusive search"
+                elif result is ScanResult.SUSPICOUS: 
+                    systemDescription = "something abnormal present with trace evidence of suspicous " \
+                                        "activity. Warning: proceed with caution"
+                elif result is ScanResult.ABNORMAL:  
+                    systemDescription = "something abnormal present"
+                elif result is ScanResult.EMPTY:     
+                    systemDescription = "nothing of significance"
+
+                delayedPrint(f"[{direction.name}]wise there is {systemDescription}")
+
+            delayedPrint()
+            delayedPrint("Press ENTER to continue"); input()
 
         elif choice == 'i':
             displayInventory(inventory, requiredItems)
@@ -475,14 +561,14 @@ def startMenu():
     """ Displays the start menu to the player. Player can exit the game from the menu. Returns when
         the user decides to play."""
     startMenu = OptionSelector()
-    startMenu.addOption('p', centerMessage("(P)lay"))
-    startMenu.addOption('i', centerMessage("(I)nstructions"))
-    startMenu.addOption('a', centerMessage("(A)bout"))
-    startMenu.addOption('e', centerMessage("(E)xit"))
+    startMenu.addOption('p', centerMessage("(P)LAY"))
+    startMenu.addOption('i', centerMessage("(I)NSTRUCTIONS"))
+    startMenu.addOption('a', centerMessage("(A)BOUT"))
+    startMenu.addOption('e', centerMessage("(E)XIT"))
 
     while True:
         clearScreen()
-        delayedPrint("BitMasher V4.3853256532", center=True)
+        delayedPrint("BitMasher V4.3853256532", center=True) # Meaningless version number.
         delayedPrint()
         delayedPrint("Type and enter the character in brackets to select an option.", center=True)
         delayedPrint()
