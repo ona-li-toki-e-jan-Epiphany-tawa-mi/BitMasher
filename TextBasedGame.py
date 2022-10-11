@@ -354,16 +354,16 @@ generateMap.systems = [ "The Registry",
                         "The Network interfaces",
                         "The Kernal",
                         "The Hard drive",         
-                        "WebSurfer",
-                        "PainterEX",
-                        "BitMasher",
-                        "The ilo li sina Interpreter",
-                        "FreeWriter",
-                        "PIMG",
-                        "The Espresso Runtime Enviroment",
-                        "SuperCAD",
-                        "MacroDoi",
-                        "Conway's Ivory Tower"             ]
+                        "WebSurfer",                         # Not real. 
+                        "PainterEX",                         # Not real.    
+                        "BitMasher",                         # ;).
+                        "The ilo li sina Interpreter",       # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/ilo-li-sina
+                        "FreeWriter",                        # Not real.
+                        "PIMG",                              # Not real.
+                        "The Espresso Runtime Enviroment",   # Not real.
+                        "SuperCAD",                          # Not real.
+                        "MacroDoi",                          # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
+                        "Conway's Ivory Tower"             ] # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Tower
 
 
 
