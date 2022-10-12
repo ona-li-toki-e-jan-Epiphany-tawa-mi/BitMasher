@@ -567,29 +567,12 @@ def runGame():
             delayedPrint()
             delayedPrint("Scanning...")
             sleep(0.8)
-            delayedPrint()
 
-            for direction, system in currentSystem:
+            for _, system in currentSystem:
                 if system is None: 
                     continue
 
-                result = system.tryScan()
-                systemDescription = None
-
-                if result is ScanResult.ERROR:    
-                     systemDescription = "[ERROR]. Warning: possible inconclusive search"
-                elif result is ScanResult.SUSPICOUS: 
-                    systemDescription = "something abnormal present with trace evidence of suspicous " \
-                                        "activity. Warning: proceed with caution"
-                elif result is ScanResult.ABNORMAL:  
-                    systemDescription = "something abnormal present"
-                elif result is ScanResult.EMPTY:     
-                    systemDescription = "nothing of significance"
-
-                delayedPrint(f"[{direction.name}]wise there is {systemDescription}")
-
-            delayedPrint()
-            delayedPrint("Press ENTER to continue"); input()
+                system.tryScan()
 
         elif choice == 'i':
             displayInventory(inventory, requiredItems)
