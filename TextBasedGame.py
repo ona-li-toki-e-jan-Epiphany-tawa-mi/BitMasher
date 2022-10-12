@@ -146,6 +146,14 @@ class Inventory:
 
         return itemList
 
+    def countItems(self) -> int:
+        """ Returns the number of items present in the inventory. """
+        counter = 0
+        for count in self.items.values():
+            counter += count
+
+        return counter
+
     def isEmpty(self) -> bool:
         return not self.items
 
@@ -369,16 +377,27 @@ def generateMap(requiredItems: Inventory) -> System:
                                          #     path to every item, that it is not blocked by it.
     random.shuffle(systemPool)
 
+    lastItemIndex = None
+    itemIndex = 0
+    systemIndex = 0
+
     # All requried items must be generated, but not all rooms, thus we iterate through each item and
     #   generate a room for it.
-    for i in range(0, len(itemPool)):
+    while itemIndex < len(itemPool):
+        # If this index meets or exceeds the size of the system pool, i.e. there a more items then 
+        #   systems, we need to reduce the amount of items required so we can fit them on the map.
+        if systemIndex >= len(systemPool) - 1:
+            # We only want the first unavalible item index to know which items will have to be removed.
+            lastItemIndex = itemIndex
+            # Forces the last system to be used for the ransomware, which is at the end of the item pool.
+            itemIndex = len(itemPool) - 1
+
         traverser = startingSystem
         previousDirection = None
         stepsLeft = 10
 
         #TODO Does not connect existing systems together except for the previous one, resulting in
         #   "spiky maps." Possibly fix.
-        #TODO Make sure travereser generates all items; there may be the possiblity it never does one.
         while stepsLeft >= 0:
             stepsLeft -= 1
 
@@ -402,8 +421,17 @@ def generateMap(requiredItems: Inventory) -> System:
                     continue
 
                 traverser.setAdjacent(random.choice(possibleDirections)
-                                    , System(systemPool[i], itemPool[i]))
+                                    , System(systemPool[systemIndex], itemPool[itemIndex]))
                 break
+
+
+        itemIndex   += 1
+        systemIndex += 1
+
+    # Removes required items that a room could not be made avalible for.
+    if lastItemIndex is not None:
+        for i in range(lastItemIndex, len(itemPool) - 1): # No need to remove ransomware, so -1.
+            requiredItems.tryRemoveItem(itemPool[i])
 
     return startingSystem
 
@@ -420,7 +448,7 @@ generateMap.systems = [ "The Registry",
                         "The Espresso Runtime Enviroment",   # Not real.
                         "SuperCAD",                          # Not real.
                         "MacroDoi",                          # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
-                        "Conway's Ivory Tower"             ] # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Tower
+                        "Conway's Ivory Tower"             ] # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Towery",                         
 
 
 
@@ -465,10 +493,27 @@ def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
         leave or they fail/complete it. """
     requiredItems = generateRequiredItems()
+    pregenRequiredItemsCount = requiredItems.countItems()
     currentSystem = generateMap(requiredItems)
     gameMenu = OptionSelector()
 
     inventory = Inventory()
+
+    # Warning for partial map generation.
+    if pregenRequiredItemsCount != requiredItems.countItems():
+        clearScreen()
+        delayedPrint("WARNING: Unable to generate enough systems!", center=True)
+        delayedPrint("Could only place {} items from a pool of {}".format(
+                requiredItems.countItems(), pregenRequiredItemsCount)
+                   , center=True)
+        delayedPrint("There are only {} systems avalible in total for generation".format(
+                generateMap.systems)
+                   , center=True)
+        delayedPrint("Please notify the developer(s) so they can fix it", center=True)
+        delayedPrint()
+        delayedPrint("The game should still run fine, so feel free to continue playing", center=True)
+        delayedPrint()
+        delayedPrint("Press ENTER to continue", center=True); input()
 
     while True:
         if currentSystem.item is ItemType.RANSOMWARE:
