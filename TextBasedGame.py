@@ -62,7 +62,7 @@ class OptionSelector:
         self.options.append(characterCode[0].lower())
         self.messages.append(message)
 
-    def addMessage(self, message: str):
+    def addMessage(self, message: str=''):
         """ Adds a new message. Messages and options are displayed in the order they are added."""
         self.messages.append(message)
 
@@ -154,29 +154,55 @@ class Inventory:
 
         return counter
 
+    def countItem(self, item: ItemType) -> int:
+        """ Returns amount of the specified item present, returning 0 if it isn't """
+        try:
+            return self.items[item]
+        except KeyError:
+            return 0
+
     def isEmpty(self) -> bool:
         return not self.items
 
+    def contains(self, item: ItemType) -> bool:
+        """ Checks if an item is present within the inventory, regardless of count. """
+        try:
+            self.items[item]
+            return True
+        except KeyError:
+            return False
 
+
+def playLoseSequence():
+    """ Displays the normal losing sequence when you die. """
+    clearScreen()
+        
+    for i in range(0, 15):
+        print(chr(random.randint(0, 0x20)), end='')
+        for i in range(0, 1000):
+            print(chr(random.randint(0x21, 0x7E)), end='')
+
+        sleep(0.001)
+
+    clearScreen()
+    delayedPrint("You have failed", center=True)
+    delayedPrint("All systems gave been taken over", center=True)
+    delayedPrint()
+    delayedPrint("Press ENTER to contiune", center=True); input()
 
 class Fighter:
     """ Represents a fighter in a battle, complete with health, damage, and digital bloodlust. """
     name:           str
     health:         int
     damage:         int
-    isInvulnerable: bool
 
-    def __init__(self, name: str, initialHealth: int, damage: int, isInvulnerable: bool=False):
+    def __init__(self, name: str, initialHealth: int, damage: int):
         self.name = name
         self.health         = initialHealth
         self.damage         = damage
-        self.isInvulnerable = isInvulnerable
 
     def attack(self, victim: 'Fighter') -> int:
         """ Applies self's damage to the victim, reducing their health and returning the damage done. """
-        if victim.isInvulnerable:
-            return 0 
-
         victim.health -= self.damage
         return self.damage
 
@@ -184,8 +210,8 @@ class Fighter:
         return self.health <= 0
 
     def getDisplayableStatus(self) -> str:
-        return "{}: {} hp, {} def, {} dmg".format(
-                self.name, self.health, 9999 if self.isInvulnerable else 0, self.damage)
+        """ Returns a human readable status that shows name, hp, and damage. """
+        return f"{self.name}: {self.health} hp, {self.damage} dmg"
 
 def doRansomwareBattle(requiredItemsLeft: Inventory):
     """ Plays out the turn-based fight against the ransomware. """
@@ -195,15 +221,31 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
         sleep(0.7)
         delayedPrint()
 
-    #TODO: set stats based on missing items.
+    memoryAlterationCapablity = not requiredItemsLeft.contains(ItemType.FULL_MEMORY_READ_ACCESS) and \
+                                not requiredItemsLeft.contains(ItemType.FULL_MEMORY_WRITE_ACCESS)
+    adminPrivileges = not requiredItemsLeft.contains(ItemType.OS_OVERRIDE_CAPABILITY)
+    dereferencer = not requiredItemsLeft.contains(ItemType.POINTER_DEREFERENCER)
+
     player = Fighter("You", 50, 15)
-    ransomware = Fighter("The Ransomware", 50, 10, isInvulnerable=not requiredItemsLeft.isEmpty())
+    ransomware = Fighter("The Ransomware"
+                       , 50 + 25 * requiredItemsLeft.countItem(ItemType.RANSOMWARE_CODE_FRAGMENT)
+                       , 10 + 10 * requiredItemsLeft.countItem(ItemType.VULNERABILITY))
 
     fightMenu = OptionSelector()
-    fightMenu.addOption('a', "(A)TTACK")
-    fightMenu.addOption('r', "(R)UN away")
-    fightMenu.addOption('d', "Do a funny (D)ANCE")
+    fightMenu.addOption('x', "E(X)TRACT")
+    fightMenu.addOption('d', "Do a funny (d)ance")
+    fightMenu.addMessage()
     fightMenu.addOption('e', "(E)XIT game")
+
+    # Intro sequence.
+    clearScreen()
+    delayedPrint("The Ransomware", center=True)
+    delayedPrint()
+    delayedPrint("You have located the ransomware infecting the computer", center=True)
+    delayedPrint("Extract it from the system as soon as possible", center=True)
+    delayedPrint("There is no other option", center=True)
+    delayedPrint()
+    delayedPrint("Press ENTER to continue", center=True); input()
 
     while True:
         clearScreen()
@@ -214,56 +256,62 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
         delayedPrint()
 
         choice = fightMenu.getSelection()
-        if choice == 'a':
+        if choice == 'x':
             moveDelay()
-            delayedPrint("You go on the attack...")
+            delayedPrint("You attempt to extract the ransomware...")
             moveDelay()
-            damage = player.attack(ransomware)
-            delayedPrint(f"You attack, dealing {damage} dmg ({ransomware.health} hp remaining)")
 
-            if ransomware.isDead():
-                moveDelay()
-                delayedPrint("You win!")
-                delayedPrint()
-                delayedPrint("Press ENTER to contiune"); input()
-                break
+            if not dereferencer:
+                delayedPrint("Unable to locate relavent memory to alter; you lack the capabilities")
 
-        elif choice == 'r':
-            moveDelay()
-            delayedPrint("You try running away...")
-            moveDelay()
-            delayedPrint("But there is no exit")
+            elif not memoryAlterationCapablity:
+                delayedPrint("Unable to alter relavent memory; you lack the capabilities")
+
+            elif not adminPrivileges:
+                delayedPrint("Memory alteration denied; you lack sufficent privileges")
+
+            else:
+                damage = player.attack(ransomware)
+                delayedPrint(f"You complete partial code extraction, dealing {damage} dmg ({ransomware.health} hp remaining)")
+
+                if ransomware.isDead():
+                    moveDelay()
+                    delayedPrint("You win!")
+                    delayedPrint()
+                    delayedPrint("Press ENTER to contiune"); input()
+                    break
 
         elif choice == 'd':
             moveDelay()
-            delayedPrint("You do a funny dance...")
+            delayedPrint("You attempt a funny dance...")
             moveDelay()
             damage = player.attack(player)
-            delayedPrint(f"You accidentally hit yourself, dealing {damage} dmg ({player.health} hp remaining)")
+            delayedPrint("You are an antivirus, you have no means to dance")
+            delayedPrint("In the process you corrupted your own data, dealing {} dmg ({} hp remaining)"
+                    .format(damage, player.health))
 
+            # Special end if player kills themself.
             if player.isDead():
                 moveDelay()
-                delayedPrint()
-                delayedPrint("TODO: add easter egg here")#TODO
-                delayedPrint("Well anyways you lost lol")
-                delayedPrint()
-                delayedPrint("Press ENTER to continue"); input()
+                for i in range(0, 15000):
+                    print(";;;;)))))", end='')
                 break
 
         elif choice == 'e':
             break
+
         
+        # Malware attack sequence.
         moveDelay()
-        delayedPrint("The ransomware goes on the attack...")
+        delayedPrint("The ransomware attempts to deliver a payload...")
         moveDelay()
         damage = ransomware.attack(player)
-        delayedPrint(f"You were attacked, dealing {ransomware.damage} dmg ({player.health} hp remaining)")
+        delayedPrint("You were hit with a viral payload, dealing {} dmg ({} hp remaining)".format(
+                damage, player.health))
 
         if player.isDead():
             moveDelay()
-            delayedPrint("You lose!")
-            delayedPrint()
-            delayedPrint("Press ENTER to contiune"); input()
+            playLoseSequence()
             break
 
         moveDelay()
@@ -286,7 +334,6 @@ class Direction(Enum):
     LEFT = auto()
     RIGHT = auto()
 
-    #TODO: possibly make this use a dict.
     def opposite(self) -> 'Direction':
         """ Returns the direction opposite to the current one. """
         if   self is Direction.UP:   return Direction.DOWN
@@ -366,7 +413,6 @@ class System:
 def generateMap(requiredItems: Inventory) -> System:
     """ Generates a new game map with randomly placed systems populated with items and the 
         randsomeware. Returns the starting system. """
-    #TODO: ensure the item pool is smaller or the same size as the room pool.
     startingSystem = System("The Boot Loader")
     itemPool = requiredItems.toItemList()
     systemPool = generateMap.systems.copy()
@@ -396,8 +442,6 @@ def generateMap(requiredItems: Inventory) -> System:
         previousDirection = None
         stepsLeft = 10
 
-        #TODO Does not connect existing systems together except for the previous one, resulting in
-        #   "spiky maps." Possibly fix.
         while stepsLeft >= 0:
             stepsLeft -= 1
 
@@ -526,7 +570,7 @@ def runGame():
         delayedPrint()
 
         gameMenu.dumpOptions()
-        #TODO: Generalize movement code if possible. Try to make dependent on names of direction enum.
+
         if currentSystem[Direction.UP] is not None:
             gameMenu.addOption('u', currentSystem[Direction.UP].tryAppendScanResult(
                     f"[{currentSystem[Direction.UP].name}] is (U)P above"))
@@ -542,7 +586,7 @@ def runGame():
         if currentSystem.item is not ItemType.NONE:
             gameMenu.addOption('t', f"There is a [{currentSystem.item.value}]. (T)AKE it?")
 
-        gameMenu.addMessage('')
+        gameMenu.addMessage()
         gameMenu.addOption('s', '(S)CAN the neighboring systems')
         gameMenu.addOption('i', 'Open the (I)NVENTORY')
         gameMenu.addOption('e', '(E)XIT game')
