@@ -91,7 +91,6 @@ class OptionSelector:
 
 
 
-#TODO: add NONE type.
 class ItemType(Enum):
     """ Represents the various types of items that can be collected. Also is used to represent the 
         ransomware on the map."""
@@ -103,6 +102,7 @@ class ItemType(Enum):
     VULNERABILITY            = "Vulnerability"
     RANSOMWARE               = '' # The ransomware is stored on the map as an item since there is not
                                   #     going to be an item in that room anyways.
+    NONE                     = 'None'
 
 class Inventory:
     """ Used to represent a set of items along with the amount of each item stored. """
@@ -138,7 +138,7 @@ class Inventory:
 
     def toItemList(self) -> List[ItemType]:
         """ Takes all of the items and places them in a single list. Multiple items of the same type
-            will be dupicated. """
+            will be duplicated. """
         itemList = []
         for item, count in self:
             for i in range(0, count):
@@ -153,11 +153,13 @@ class Inventory:
 
 class Fighter:
     """ Represents a fighter in a battle, complete with health, damage, and digital bloodlust. """
+    name:           str
     health:         int
     damage:         int
     isInvulnerable: bool
 
-    def __init__(self, initialHealth: int, damage: int, isInvulnerable: bool=False):
+    def __init__(self, name: str, initialHealth: int, damage: int, isInvulnerable: bool=False):
+        self.name = name
         self.health         = initialHealth
         self.damage         = damage
         self.isInvulnerable = isInvulnerable
@@ -173,6 +175,10 @@ class Fighter:
     def isDead(self) -> bool:
         return self.health <= 0
 
+    def getDisplayableStatus(self) -> str:
+        return "{}: {} hp, {} def, {} dmg".format(
+                self.name, self.health, 9999 if self.isInvulnerable else 0, self.damage)
+
 def doRansomwareBattle(requiredItemsLeft: Inventory):
     """ Plays out the turn-based fight against the ransomware. """
     def moveDelay():
@@ -182,8 +188,8 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
         delayedPrint()
 
     #TODO: set stats based on missing items.
-    player = Fighter(100, 15)
-    ransomware = Fighter(100, 10, not requiredItemsLeft.isEmpty())
+    player = Fighter("You", 50, 15)
+    ransomware = Fighter("The Ransomware", 50, 10, isInvulnerable=not requiredItemsLeft.isEmpty())
 
     fightMenu = OptionSelector()
     fightMenu.addOption('a', "(A)TTACK")
@@ -195,8 +201,8 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
         clearScreen()
         delayedPrint("The Ransomware", center=True)
         delayedPrint()
-        delayedPrint(f"Your health: {player.health}")
-        delayedPrint(f"Ransomware's health: {ransomware.health}")
+        delayedPrint(player.getDisplayableStatus())
+        delayedPrint(ransomware.getDisplayableStatus())
         delayedPrint()
 
         choice = fightMenu.getSelection()
@@ -205,7 +211,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
             delayedPrint("You go on the attack...")
             moveDelay()
             damage = player.attack(ransomware)
-            delayedPrint(f"You attack for {damage} health ({ransomware.health} remaining)")
+            delayedPrint(f"You attack, dealing {damage} dmg ({ransomware.health} hp remaining)")
 
             if ransomware.isDead():
                 moveDelay()
@@ -225,12 +231,12 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
             delayedPrint("You do a funny dance...")
             moveDelay()
             damage = player.attack(player)
-            delayedPrint(f"You accidentally hit yourself for {damage} health ({player.health} remaining)")
+            delayedPrint(f"You accidentally hit yourself, dealing {damage} dmg ({player.health} hp remaining)")
 
             if player.isDead():
                 moveDelay()
                 delayedPrint()
-                delayedPrint("TODO: add easter egg here")
+                delayedPrint("TODO: add easter egg here")#TODO
                 delayedPrint("Well anyways you lost lol")
                 delayedPrint()
                 delayedPrint("Press ENTER to continue"); input()
@@ -243,7 +249,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
         delayedPrint("The ransomware goes on the attack...")
         moveDelay()
         damage = ransomware.attack(player)
-        delayedPrint(f"You were attacked for {ransomware.damage} health ({player.health} remaining)")
+        delayedPrint(f"You were attacked, dealing {ransomware.damage} dmg ({player.health} hp remaining)")
 
         if player.isDead():
             moveDelay()
@@ -283,13 +289,13 @@ class Direction(Enum):
 class System:
     """ Represents a system (room) within the game. """
     name:          str
-    item:          Union[ItemType, None]
+    item:          ItemType
     scanResult:    ScanResult
     adjacentRooms: Dict[Direction, Union['System', None]]
 
-    def __init__(self, name: str, item: Union[ItemType, None] = None):
-        self.name = name
-        self.item = item
+    def __init__(self, name: str, item: ItemType=ItemType.NONE):
+        self.name       = name
+        self.item       = item
         self.scanResult = ScanResult.NONE
 
         self.adjacentRooms = { Direction.UP:    None,
@@ -325,7 +331,7 @@ class System:
             scanResult = ScanResult.ERROR
         elif self.item is ItemType.RANSOMWARE: 
             scanResult = ScanResult.SUSPICOUS
-        elif self.item is not None: 
+        elif self.item is not ItemType.NONE: 
             scanResult = ScanResult.ABNORMAL
         else:                         
             scanResult = ScanResult.EMPTY
@@ -488,7 +494,7 @@ def runGame():
         if currentSystem[Direction.RIGHT] is not None:
             gameMenu.addOption('r', currentSystem[Direction.RIGHT].tryAppendScanResult(
                     f"[{currentSystem[Direction.RIGHT].name}] is to the (R)IGHT"))
-        if currentSystem.item is not None:
+        if currentSystem.item is not ItemType.NONE:
             gameMenu.addOption('t', f"There is a [{currentSystem.item.value}]. (T)AKE it?")
 
         gameMenu.addMessage('')
@@ -510,7 +516,7 @@ def runGame():
         elif choice == 't':
             inventory.addItem(currentSystem.item)
             requiredItems.tryRemoveItem(currentSystem.item)
-            currentSystem.item = None
+            currentSystem.item = ItemType.NONE
 
         elif choice == 's':
             delayedPrint()
@@ -525,7 +531,7 @@ def runGame():
                 result = system.tryScan()
                 systemDescription = None
 
-                if   result is ScanResult.ERROR:    
+                if result is ScanResult.ERROR:    
                      systemDescription = "[ERROR]. Warning: possible inconclusive search"
                 elif result is ScanResult.SUSPICOUS: 
                     systemDescription = "something abnormal present with trace evidence of suspicous " \
