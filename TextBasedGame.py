@@ -142,9 +142,14 @@ class ItemType(Enum):
     OS_OVERRIDE_CAPABILITY   = "OS override capability"
     RANSOMWARE_CODE_FRAGMENT = "RANSOMWARE code fragment"
     VULNERABILITY            = "Vulnerability"
-    RANSOMWARE               = '' # The RANSOMWARE is stored on the map as an item since there is not
-                                  #     going to be an item in that room anyways.
+    RANSOMWARE               = 'The RANSOMWARE' # The RANSOMWARE is stored on the map as an item since 
+                                                #   there is not going to be an item in that room 
+                                                #   anyways.
     NONE                     = 'None'
+
+    def name(self) -> str:
+        """ Returns the name of the item. """
+        return self.value
 
 class Inventory:
     """ Used to represent a set of items along with the amount of each item stored. """
@@ -221,7 +226,7 @@ def playLoseSequence():
         
     for i in range(0, 15):
         print(chr(random.randint(0, 0x20)), end='')
-        for i in range(0, 1000):
+        for k in range(0, 1000):
             print(chr(random.randint(0x21, 0x7E)), end='')
 
         sleep(0.001)
@@ -277,6 +282,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
 
     fightMenu = OptionSelector()
     fightMenu.addOption('x', "E(X)TRACT")
+    fightMenu.addOption('n', "Do (N)OTHING")
     fightMenu.addOption('d', "Do a funny (D)ANCE")
     fightMenu.addMessage()
     fightMenu.addOption('e', "(E)XIT game")
@@ -327,6 +333,10 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
                     awaitPlayer(center=True)
                     break
 
+        elif choice == 'n':
+            moveDelay()
+            delayedPrint("You do absolutely NOTHING...")
+
         elif choice == 'd':
             moveDelay()
             delayedPrint("You attempt a funny DANCE...")
@@ -339,8 +349,12 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
             # Special end if player kills themself.
             if player.isDead():
                 moveDelay()
-                for i in range(0, 15000):
-                    print(";;;;)))))", end='')
+                for i in range(0, 15):
+                    for k in range(0, 1000):
+                        print(";;;;)))))", end='')
+
+                    sleep(0.001)
+
                 break
 
         elif choice == 'e':
@@ -387,15 +401,33 @@ class Direction(Enum):
         elif self is Direction.LEFT: return Direction.RIGHT
         else:                        return Direction.LEFT
         
+class SystemType(Enum):
+    """ Represents the various systems that can be visited. """
+    BOOTLOADER                  = "The Bootloader"
+    REGISTRY                    = "The Registry"
+    NETWORK_INTERFACES          = "The Network interfaces"
+    KERNAL                      = "The Kernal"
+    HARD_DRIVE                  = "The Hard drive"        
+    WEBSURFER                   = "WebSurfer"                       # Not real. 
+    PAINTEREX                   = "PainterEX"                       # Not real.    
+    BITMASHER                   = "BitMasher"                       # ;).
+    ILO_LI_SINA_INTERPRETER     = "The ilo li sina Interpreter"     # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/ilo-li-sina
+    FREEWRITER                  = "FreeWriter"                      # Not real.
+    PIMG                        = "PIMG"                            # Not real.
+    ESPRESSO_RUNTIME_ENVIROMENT = "The Espresso Runtime Enviroment" # Not real.
+    SUPERCAD                    = "SuperCAD"                        # Not real.
+    MACRODOI                    = "MacroDoi"                        # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
+    CONWAYS_IVORY_TOWER         = "Conway's Ivory Tower"            # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Towery",                         
+
 class System:
     """ Represents a system (room) within the game. """
-    name:          str
+    type:          SystemType
     item:          ItemType
     scanResult:    ScanResult
     adjacentRooms: Dict[Direction, Union['System', None]]
 
-    def __init__(self, name: str, item: ItemType=ItemType.NONE):
-        self.name       = name
+    def __init__(self, type: SystemType, item: ItemType=ItemType.NONE):
+        self.type       = type
         self.item       = item
         self.scanResult = ScanResult.NONE
 
@@ -403,6 +435,10 @@ class System:
                                Direction.DOWN:  None,
                                Direction.LEFT:  None,
                                Direction.RIGHT: None  }
+
+    def name(self) -> str:
+        """ Returns the name of the system. """
+        return self.type.value
 
     def __getitem__(self, direction: Direction) -> Union['System', None]:
         """ Returns the adjacent system in the given direction. """
@@ -456,12 +492,18 @@ class System:
 
 
 
+def generateSystemPool() -> List[SystemType]:
+    """ Generates the pool of systems that the map generator can pull from. """
+    systemPool = list(SystemType)
+    systemPool.remove(SystemType.BOOTLOADER)
+    return systemPool
+
 def generateMap(requiredItems: Inventory) -> System:
     """ Generates a new game map with randomly placed systems populated with items and the 
         randsomeware. Returns the starting system. """
-    startingSystem = System("The Boot Loader")
+    startingSystem = System(SystemType.BOOTLOADER)
     itemPool = requiredItems.toItemList()
-    systemPool = generateMap.systems.copy()
+    systemPool = generateSystemPool()
 
     random.shuffle(itemPool)
     itemPool.append(ItemType.RANSOMWARE) # We append the RANSOMWARE after the items have been shuffled as
@@ -546,21 +588,6 @@ def generateMap(requiredItems: Inventory) -> System:
 
     return startingSystem
 
-generateMap.systems = [ "The Registry",
-                        "The Network interfaces",
-                        "The Kernal",
-                        "The Hard drive",         
-                        "WebSurfer",                         # Not real. 
-                        "PainterEX",                         # Not real.    
-                        "BitMasher",                         # ;).
-                        "The ilo li sina Interpreter",       # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/ilo-li-sina
-                        "FreeWriter",                        # Not real.
-                        "PIMG",                              # Not real.
-                        "The Espresso Runtime Enviroment",   # Not real.
-                        "SuperCAD",                          # Not real.
-                        "MacroDoi",                          # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
-                        "Conway's Ivory Tower"             ] # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Towery",                         
-
 
 
 def generateRequiredItems() -> Inventory:
@@ -586,7 +613,7 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
         delayedPrint("Empty...", center=True)
     else:
         for item, count in inventory:
-            delayedPrint(f"- {item.value}: {count}", center=True)
+            delayedPrint(f"- {item.name()}: {count}", center=True)
 
     delayedPrint()
     delayedPrint("Remaining Items:", center=True)
@@ -595,7 +622,7 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
         delayedPrint("Everything needed has been found...", center=True)
     else:
         for item, count in requiredItems:
-            delayedPrint(f"- {item.value}: {count}", center=True)
+            delayedPrint(f"- {item.name()}: {count}", center=True)
     
     delayedPrint()
     awaitPlayer(center=True)
@@ -623,7 +650,7 @@ def runGame():
 
         clearScreen()
         currentSystem.tryScan(canFail=False)
-        delayedPrint(currentSystem.tryAppendScanResult(currentSystem.name), center=True)
+        delayedPrint(currentSystem.tryAppendScanResult(currentSystem.name()), center=True)
         delayedPrint("Time left: {:.1F} second(s)".format(
                 (loseTime - currentTime) / SECONDS_TO_NANOSECONDS)
                    , center=True)
@@ -633,18 +660,18 @@ def runGame():
 
         if currentSystem[Direction.UP] is not None:
             gameMenu.addOption('u', currentSystem[Direction.UP].tryAppendScanResult(
-                    f"[{currentSystem[Direction.UP].name}] is (U)P above"))
+                    f"[{currentSystem[Direction.UP].name()}] is (U)P above"))
         if currentSystem[Direction.DOWN] is not None:
             gameMenu.addOption('d', currentSystem[Direction.DOWN].tryAppendScanResult(
-                    f"[{currentSystem[Direction.DOWN].name}] is (D)OWN below"))
+                    f"[{currentSystem[Direction.DOWN].name()}] is (D)OWN below"))
         if currentSystem[Direction.LEFT] is not None:
             gameMenu.addOption('l', currentSystem[Direction.LEFT].tryAppendScanResult(
-                    f"[{currentSystem[Direction.LEFT].name}] is to the (L)EFT"))
+                    f"[{currentSystem[Direction.LEFT].name()}] is to the (L)EFT"))
         if currentSystem[Direction.RIGHT] is not None:
             gameMenu.addOption('r', currentSystem[Direction.RIGHT].tryAppendScanResult(
-                    f"[{currentSystem[Direction.RIGHT].name}] is to the (R)IGHT"))
+                    f"[{currentSystem[Direction.RIGHT].name()}] is to the (R)IGHT"))
         if currentSystem.item is not ItemType.NONE:
-            gameMenu.addOption('t', f"There is a [{currentSystem.item.value}]. (T)AKE it?")
+            gameMenu.addOption('t', f"There is a [{currentSystem.item.name()}]. (T)AKE it?")
 
         gameMenu.addMessage()
         gameMenu.addOption('s', '(S)CAN the neighboring systems')
