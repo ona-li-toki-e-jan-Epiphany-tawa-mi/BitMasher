@@ -7,8 +7,6 @@ BitMasher, a text adventure game where you act as an antiviris attempting to rid
 @author Nathaniel Needham
 """
 
-#TODO: Make extra item "SANDBOXER" which keeps the timer rolling while in the fight if missing.
-
 ## Configuration Section START
 # The time, in seconds, between printing each line that gives the slow scroll effect.
 SLOW_SCROLL_DELAY = 0.11
@@ -228,6 +226,7 @@ def playLoseSequence():
         
     for i in range(0, 15):
         print(chr(random.randint(0, 0x20)), end='')
+        print(end='\a') # Beeps. Not always avalible.
         for k in range(0, 1000):
             print(chr(random.randint(0x21, 0x7E)), end='')
 
@@ -361,6 +360,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
             if player.isDead():
                 moveDelay()
                 for i in range(0, 15):
+                    print(end='\a') # Beeps. Not always avalible.
                     for k in range(0, 1000):
                         print(";;;;)))))", end='')
 
