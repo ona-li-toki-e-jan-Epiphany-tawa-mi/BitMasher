@@ -11,8 +11,11 @@ BitMasher, a text adventure game where you act as an antiviris attempting to rid
 #TODO: Make extra item "SANDBOXER" which keeps the timer rolling while in the fight if missing.
 
 ## Configuration Section START
+# The time, in seconds, between printing each line that gives the slow scroll effect.
+SLOW_SCROLL_DELAY = 0.11
+
 # The amount of time the player is given per system generated.
-SECONDS_PER_SYSTEM = 9
+SECONDS_PER_SYSTEM = 8
 # The time, in seconds, it takes to SCAN the surrounding systems.
 SCAN_TIME = 0.8
 # The chance a SCAN will fail, given as a number between 0 and 1.
@@ -62,7 +65,7 @@ def delayedPrint(message: str='', end: str='\n', center: bool=False):
 
     # Attempts to split text up line-by-line in the case of strings longer than a line.
     while True:
-        sleep(0.15)
+        sleep(SLOW_SCROLL_DELAY)
         messageChunk = message[remaining:remaining + screenWidth]
         print(messageChunk if not center else centerMessage(messageChunk), end='')
 
@@ -75,6 +78,11 @@ def delayedPrint(message: str='', end: str='\n', center: bool=False):
 def clearScreen():
     """ Clears the terminal. """
     os.system('cls' if os.name=='nt' else 'clear')
+
+def awaitPlayer(center: bool=False):
+    """ Displays a message and waits for the player to chose to continue. """
+    delayedPrint("Press ENTER to contiune", center=center)
+    input()
 
 
 class OptionSelector:
@@ -222,7 +230,7 @@ def playLoseSequence():
     delayedPrint("You have failed", center=True)
     delayedPrint("All systems gave been taken over", center=True)
     delayedPrint()
-    delayedPrint("Press ENTER to contiune", center=True); input()
+    awaitPlayer(center=True)
 
 class Fighter:
     """ Represents a fighter in a battle, complete with health, damage, and digital bloodlust. """
@@ -281,7 +289,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
     delayedPrint("EXTRACT it from the system as soon as possible", center=True)
     delayedPrint("There is no other option", center=True)
     delayedPrint()
-    delayedPrint("Press ENTER to continue", center=True); input()
+    awaitPlayer(center=True)
 
     while True:
         clearScreen()
@@ -316,7 +324,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
                     delayedPrint("Congratulations", center=True)
                     delayedPrint("You have successfully EXTRACTed the RANSOMWARE")
                     delayedPrint()
-                    delayedPrint("Press ENTER to contiune", center=True); input()
+                    awaitPlayer(center=True)
                     break
 
         elif choice == 'd':
@@ -353,7 +361,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
             break
 
         moveDelay()
-        delayedPrint("Press ENTER to contiune"); input()
+        awaitPlayer()
 
 
 
@@ -534,7 +542,7 @@ def generateMap(requiredItems: Inventory) -> System:
         delayedPrint()
         delayedPrint("The game should still run fine, so feel free to continue PLAYing", center=True)
         delayedPrint()
-        delayedPrint("Press ENTER to continue", center=True); input()
+        awaitPlayer(center=True)
 
     return startingSystem
 
@@ -590,7 +598,7 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
             delayedPrint(f"- {item.value}: {count}", center=True)
     
     delayedPrint()
-    delayedPrint("Press ENTER to continue", center=True); input()
+    awaitPlayer(center=True)
 
 SECONDS_TO_NANOSECONDS = 1_000_000_000
 
@@ -729,8 +737,7 @@ def startMenu():
             delayedPrint()
             delayedPrint("Good luck", center=True)
             delayedPrint()
-            delayedPrint("Press ENTER to contiune.", center=True)
-            input()
+            awaitPlayer(center=True) 
 
         elif choice == 'a':
             clearScreen()
@@ -748,7 +755,7 @@ def startMenu():
             delayedPrint()
             delayedPrint("Anyways, have fun", center=True)
             delayedPrint()
-            delayedPrint("Press ENTER to contiune.", center=True); input()
+            awaitPlayer(center=True)
 
         elif choice == 'p':
             return
