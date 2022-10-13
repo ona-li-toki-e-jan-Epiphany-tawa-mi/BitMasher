@@ -7,12 +7,47 @@ BitMasher, a text adventure game where you act as an antiviris attempting to rid
 @author Nathaniel Needham
 """
 
+#TODO: Move systems into enum.
+#TODO: Make extra item "SANDBOXER" which keeps the timer rolling while in the fight if missing.
+
+## Configuration Section START
+# The amount of time the player is given per system generated.
+SECONDS_PER_SYSTEM = 9
+# The time, in seconds, it takes to SCAN the surrounding systems.
+SCAN_TIME = 0.8
+# The chance a SCAN will fail, given as a number between 0 and 1.
+SCAN_FAIL_CHANCE = 0.1
+
+# The number of steps the traverser can take before it gives up. 
+# TODO: Make it remove the item if it can't find a system.
+MAX_STEPS = 10
+# The chance that the traverser choses to move to an existing room over finding a new one, given as a 
+#   number between 0 and 1. Make larger for spikier maps.
+MOVE_CHANCE = 0.7
+
+# The amount of time, in seconds, it takes for a move to happen in the battle.
+BATTLE_MOVE_DELAY = 0.7
+# Base health for all fighters.
+FIGHTER_BASE_HEALTH = 50
+# The addtional health points the RANSOMWARE gets per missing code fragment.
+CODE_FRAGMENT_HEALTH_BOOST = 25
+# Base damage for all fighters.
+FIGHTER_BASE_DAMAGE = 10
+# The additional damage points the player gets. Must be larger than or equal to 0 for the player to 
+#   win whatsoever.
+PLAYER_DAMAGE_BOOST = 5
+# The damage boost the RANSOMWARE gets per missing vulnerability.
+VULNERABILITY_DAMAGE_BOOST = 10
+## Configuration Section END
+
+
+
 import os
 import random
 from enum import Enum, auto
 from shutil import get_terminal_size
 from sys import exit
-from time import sleep
+from time import sleep, time_ns
 from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 
 
@@ -98,9 +133,9 @@ class ItemType(Enum):
     FULL_MEMORY_WRITE_ACCESS = "Full memory write access"
     POINTER_DEREFERENCER     = "Pointer dereferencer"
     OS_OVERRIDE_CAPABILITY   = "OS override capability"
-    RANSOMWARE_CODE_FRAGMENT = "Ransomware code fragment"
+    RANSOMWARE_CODE_FRAGMENT = "RANSOMWARE code fragment"
     VULNERABILITY            = "Vulnerability"
-    RANSOMWARE               = '' # The ransomware is stored on the map as an item since there is not
+    RANSOMWARE               = '' # The RANSOMWARE is stored on the map as an item since there is not
                                   #     going to be an item in that room anyways.
     NONE                     = 'None'
 
@@ -112,14 +147,14 @@ class Inventory:
         self.items = {}
 
     def addItem(self, item: ItemType, count: int=1):
-        """ Adds the given item to the inventory. """
+        """ Adds the given item to the INVENTORY. """
         try:
             self.items[item] += count
         except KeyError:
             self.items[item] = count
 
     def tryRemoveItem(self, item: ItemType, count: int=1) -> bool:
-        """ Attempts to remove the given item from the inventory. If the item is not present or the 
+        """ Attempts to remove the given item from the INVENTORY. If the item is not present or the 
             number to remove exceeds the amount stored within, this does nothing and returns false.
             If the items were removed, this returns true."""
         if not self.items or self.items[item] < count:
@@ -147,7 +182,7 @@ class Inventory:
         return itemList
 
     def countItems(self) -> int:
-        """ Returns the number of items present in the inventory. """
+        """ Returns the number of items present in the INVENTORY. """
         counter = 0
         for count in self.items.values():
             counter += count
@@ -165,7 +200,7 @@ class Inventory:
         return not self.items
 
     def contains(self, item: ItemType) -> bool:
-        """ Checks if an item is present within the inventory, regardless of count. """
+        """ Checks if an item is present within the INVENTORY, regardless of count. """
         try:
             self.items[item]
             return True
@@ -214,11 +249,11 @@ class Fighter:
         return f"{self.name}: {self.health} hp, {self.damage} dmg"
 
 def doRansomwareBattle(requiredItemsLeft: Inventory):
-    """ Plays out the turn-based fight against the ransomware. """
+    """ PLAYs out the turn-based fight against the RANSOMWARE. """
     def moveDelay():
         """ Applies a short delay and prints a newline, which is done before every move in turn-based
             combat to make it feel more like... combat. """
-        sleep(0.7)
+        sleep(BATTLE_MOVE_DELAY)
         delayedPrint()
 
     memoryAlterationCapablity = not requiredItemsLeft.contains(ItemType.FULL_MEMORY_READ_ACCESS) and \
@@ -226,30 +261,32 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
     adminPrivileges = not requiredItemsLeft.contains(ItemType.OS_OVERRIDE_CAPABILITY)
     dereferencer = not requiredItemsLeft.contains(ItemType.POINTER_DEREFERENCER)
 
-    player = Fighter("You", 50, 15)
-    ransomware = Fighter("The Ransomware"
-                       , 50 + 25 * requiredItemsLeft.countItem(ItemType.RANSOMWARE_CODE_FRAGMENT)
-                       , 10 + 10 * requiredItemsLeft.countItem(ItemType.VULNERABILITY))
+    player = Fighter("You", FIGHTER_BASE_HEALTH, FIGHTER_BASE_DAMAGE + PLAYER_DAMAGE_BOOST)
+    ransomware = Fighter("The RANSOMWARE"
+                       , FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST * 
+            requiredItemsLeft.countItem(ItemType.RANSOMWARE_CODE_FRAGMENT)
+                       , FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST * 
+            requiredItemsLeft.countItem(ItemType.VULNERABILITY))
 
     fightMenu = OptionSelector()
     fightMenu.addOption('x', "E(X)TRACT")
-    fightMenu.addOption('d', "Do a funny (d)ance")
+    fightMenu.addOption('d', "Do a funny (D)ANCE")
     fightMenu.addMessage()
     fightMenu.addOption('e', "(E)XIT game")
 
     # Intro sequence.
     clearScreen()
-    delayedPrint("The Ransomware", center=True)
+    delayedPrint("The RANSOMWARE", center=True)
     delayedPrint()
-    delayedPrint("You have located the ransomware infecting the computer", center=True)
-    delayedPrint("Extract it from the system as soon as possible", center=True)
+    delayedPrint("You have located the RANSOMWARE infecting the computer", center=True)
+    delayedPrint("EXTRACT it from the system as soon as possible", center=True)
     delayedPrint("There is no other option", center=True)
     delayedPrint()
     delayedPrint("Press ENTER to continue", center=True); input()
 
     while True:
         clearScreen()
-        delayedPrint("The Ransomware", center=True)
+        delayedPrint("The RANSOMWARE", center=True)
         delayedPrint()
         delayedPrint(player.getDisplayableStatus())
         delayedPrint(ransomware.getDisplayableStatus())
@@ -258,7 +295,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
         choice = fightMenu.getSelection()
         if choice == 'x':
             moveDelay()
-            delayedPrint("You attempt to extract the ransomware...")
+            delayedPrint("You attempt to EXTRACT the RANSOMWARE...")
             moveDelay()
 
             if not dereferencer:
@@ -272,21 +309,23 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
 
             else:
                 damage = player.attack(ransomware)
-                delayedPrint(f"You complete partial code extraction, dealing {damage} dmg ({ransomware.health} hp remaining)")
+                delayedPrint(f"You complete partial code EXTRACTion, dealing {damage} dmg ({ransomware.health} hp remaining)")
 
                 if ransomware.isDead():
                     moveDelay()
-                    delayedPrint("You win!")
+                    clearScreen()
+                    delayedPrint("Congratulations", center=True)
+                    delayedPrint("You have successfully EXTRACTed the RANSOMWARE")
                     delayedPrint()
-                    delayedPrint("Press ENTER to contiune"); input()
+                    delayedPrint("Press ENTER to contiune", center=True); input()
                     break
 
         elif choice == 'd':
             moveDelay()
-            delayedPrint("You attempt a funny dance...")
+            delayedPrint("You attempt a funny DANCE...")
             moveDelay()
             damage = player.attack(player)
-            delayedPrint("You are an antivirus, you have no means to dance")
+            delayedPrint("You are an antivirus, you have no means to DANCE")
             delayedPrint("In the process you corrupted your own data, dealing {} dmg ({} hp remaining)"
                     .format(damage, player.health))
 
@@ -301,9 +340,9 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
             break
 
         
-        # Malware attack sequence.
+        # RANSOMWARE attack sequence.
         moveDelay()
-        delayedPrint("The ransomware attempts to deliver a payload...")
+        delayedPrint("The RANSOMWARE attempts to deliver a payload...")
         moveDelay()
         damage = ransomware.attack(player)
         delayedPrint("You were hit with a viral payload, dealing {} dmg ({} hp remaining)".format(
@@ -320,7 +359,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
 
 
 class ScanResult(Enum):
-    """ Represents the result of scanning a room to find what's inside."""
+    """ Represents the result of SCANning a room to find what's inside."""
     EMPTY     = auto()
     ABNORMAL  = auto()
     SUSPICOUS = auto()
@@ -382,7 +421,7 @@ class System:
             canFail is left true. The new result is also returned. """
         scanResult = None
 
-        if canFail and random.random() <= 0.1: 
+        if canFail and random.random() <= SCAN_FAIL_CHANCE: 
             scanResult = ScanResult.ERROR
         elif self.item is ItemType.RANSOMWARE: 
             scanResult = ScanResult.SUSPICOUS
@@ -418,7 +457,7 @@ def generateMap(requiredItems: Inventory) -> System:
     systemPool = generateMap.systems.copy()
 
     random.shuffle(itemPool)
-    itemPool.append(ItemType.RANSOMWARE) # We append the ransomware after the items have been shuffled as
+    itemPool.append(ItemType.RANSOMWARE) # We append the RANSOMWARE after the items have been shuffled as
                                          #     it needs to be generated last to ensure that there is a 
                                          #     path to every item, that it is not blocked by it.
     random.shuffle(systemPool)
@@ -435,17 +474,17 @@ def generateMap(requiredItems: Inventory) -> System:
         if systemIndex >= len(systemPool) - 1:
             # We only want the first unavalible item index to know which items will have to be removed.
             lastItemIndex = itemIndex
-            # Forces the last system to be used for the ransomware, which is at the end of the item pool.
+            # Forces the last system to be used for the RANSOMWARE, which is at the end of the item pool.
             itemIndex = len(itemPool) - 1
 
         traverser = startingSystem
         previousDirection = None
-        stepsLeft = 10
+        stepsLeft = MAX_STEPS
 
         while stepsLeft >= 0:
             stepsLeft -= 1
 
-            if random.random() < 0.7:
+            if random.random() < MOVE_CHANCE:
                 possibleDirections = [direction for direction in list(Direction) 
                                       if traverser[direction] is not None and
                                          direction is not previousDirection]
@@ -468,13 +507,12 @@ def generateMap(requiredItems: Inventory) -> System:
                                     , System(systemPool[systemIndex], itemPool[itemIndex]))
                 break
 
-
         itemIndex   += 1
         systemIndex += 1
 
     # Removes required items that a room could not be made avalible for.
     if lastItemIndex is not None:
-        for i in range(lastItemIndex, len(itemPool) - 1): # No need to remove ransomware, so -1.
+        for i in range(lastItemIndex, len(itemPool) - 1): # No need to remove RANSOMWARE, so -1.
             requiredItems.tryRemoveItem(itemPool[i])
 
     return startingSystem
@@ -497,7 +535,7 @@ generateMap.systems = [ "The Registry",
 
 
 def generateRequiredItems() -> Inventory:
-    """ Generates a list of the items that must be gathered to defeat the ransomware. """
+    """ Generates a list of the items that must be gathered to defeat the RANSOMWARE. """
     requiredItems = Inventory()
     
     requiredItems.addItem(ItemType.FULL_MEMORY_READ_ACCESS)
@@ -511,9 +549,9 @@ def generateRequiredItems() -> Inventory:
 
 def displayInventory(inventory: Inventory, requiredItems: Inventory):
     """ Displays the items the player has and the items that still need to be collected. Will return
-        once they decide to leave the inventory menu. """
+        once they decide to leave the INVENTORY menu. """
     clearScreen()
-    delayedPrint("Inventory:", center=True)
+    delayedPrint("INVENTORY:", center=True)
     delayedPrint()
     if inventory.isEmpty():
         delayedPrint("Empty...", center=True)
@@ -533,16 +571,14 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
     delayedPrint()
     delayedPrint("Press ENTER to continue", center=True); input()
 
+SECONDS_TO_NANOSECONDS = 1_000_000_000
+
 def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
         leave or they fail/complete it. """
     requiredItems = generateRequiredItems()
     pregenRequiredItemsCount = requiredItems.countItems()
     currentSystem = generateMap(requiredItems)
-    gameMenu = OptionSelector()
-
-    inventory = Inventory()
-
     # Warning for partial map generation.
     if pregenRequiredItemsCount != requiredItems.countItems():
         clearScreen()
@@ -555,11 +591,20 @@ def runGame():
                    , center=True)
         delayedPrint("Please notify the developer(s) so they can fix it", center=True)
         delayedPrint()
-        delayedPrint("The game should still run fine, so feel free to continue playing", center=True)
+        delayedPrint("The game should still run fine, so feel free to continue PLAYing", center=True)
         delayedPrint()
         delayedPrint("Press ENTER to continue", center=True); input()
 
+    gameMenu = OptionSelector()
+    inventory = Inventory()
+    loseTime = time_ns() + requiredItems.countItems() * SECONDS_PER_SYSTEM * SECONDS_TO_NANOSECONDS
+
     while True:
+        currentTime = time_ns()
+        if currentTime >= loseTime:
+            playLoseSequence()
+            break
+
         if currentSystem.item is ItemType.RANSOMWARE:
             doRansomwareBattle(requiredItems)
             break # Once the battle is over, the player either won or lost, so the game can be ended.
@@ -567,6 +612,9 @@ def runGame():
         clearScreen()
         currentSystem.tryScan(canFail=False)
         delayedPrint(currentSystem.tryAppendScanResult(currentSystem.name), center=True)
+        delayedPrint("Time left: {:.1F} second(s)".format(
+                (loseTime - currentTime) / SECONDS_TO_NANOSECONDS)
+                   , center=True)
         delayedPrint()
 
         gameMenu.dumpOptions()
@@ -609,8 +657,8 @@ def runGame():
 
         elif choice == 's':
             delayedPrint()
-            delayedPrint("Scanning...")
-            sleep(0.8)
+            delayedPrint("SCANning...")
+            sleep(SCAN_TIME)
 
             for _, system in currentSystem:
                 if system is None: 
@@ -627,8 +675,8 @@ def runGame():
 
 
 def exitGame():
-    """ Displays an exiting message and then exits. """
-    delayedPrint("Exiting", end='')
+    """ Displays an EXITing message and then EXITs. """
+    delayedPrint("EXITing", end='')
     delayedPrint(".", end='')
     delayedPrint(".", end='')
     delayedPrint(".")
@@ -636,8 +684,8 @@ def exitGame():
     exit(0)
 
 def startMenu():
-    """ Displays the start menu to the player. Player can exit the game from the menu. Returns when
-        the user decides to play."""
+    """ Displays the start menu to the player. Player can EXIT the game from the menu. Returns when
+        the user decides to PLAY."""
     startMenu = OptionSelector()
     startMenu.addOption('p', centerMessage("(P)LAY"))
     startMenu.addOption('i', centerMessage("(I)NSTRUCTIONS"))
@@ -657,16 +705,32 @@ def startMenu():
 
         elif choice == 'i':
             clearScreen()
-            delayedPrint("Instructions", center=True)
+            delayedPrint("INSTRUCTIONS", center=True)
             delayedPrint()
-            delayedPrint("TODO: add instructions.", center=True)
+            delayedPrint("\tYou are an antivirus trying to rid a computer of a RANSOMWARE before it "
+                         "takes over the system. There is a finite amount of time before the system "
+                         "is fully infected")
+            delayedPrint("\tIn order to defeat it, you must find all items before you find the "
+                         "RANSOMWARE. If you do not, you will not be able to EXTRACT it and you will "
+                         "lose.")
+            delayedPrint("\tEach system (room) contains an item, which you can move to; UP, DOWN, LEFT"
+                         ", AND RIGHT. Keep in mind that the map is NOT 2D; Moving RIGHT, UP, LEFT, and"
+                         " DOWN will lead to a different room than the one you started in. The map is "
+                         "'Spiky' so-to-speak.")
+            delayedPrint("\tYou have a scanner to aid in figuring out which rooms contain items and "
+                         "which have RANSOMWARE. Using the scanner will reveal what the surronding rooms"
+                         " contain, and the room you are currently in will be automatically scanned for "
+                         "you. But beware: SCANning takes time. Also, occasionaly a scan will fail and "
+                         "need to be repeated.")
+            delayedPrint()
+            delayedPrint("Good luck", center=True)
             delayedPrint()
             delayedPrint("Press ENTER to contiune.", center=True)
             input()
 
         elif choice == 'a':
             clearScreen()
-            delayedPrint("About", center=True)
+            delayedPrint("ABOUT", center=True)
             delayedPrint()
             delayedPrint("\tAs part of one of my classes, I need to create a text-based adventure "
                          "game where you visit various rooms to gather items. If you get all the "
@@ -675,9 +739,10 @@ def startMenu():
                          "the degree. Thus, I have decided to massively overcomplicate said game and "
                          "make it something somewhat special. I can't stand going through the effort "
                          "of making something and doing it half-baked.")
-            delayedPrint("\tI came up with the idea by thinking about what theme I should use, "
+            delayedPrint("\tI came up with the idea by thinking ABOUT what theme I should use, "
                          "picking the first idea, then adding any features that came to mind.")
-            delayedPrint("\tAnyways, have fun.")
+            delayedPrint()
+            delayedPrint("Anyways, have fun", center=True)
             delayedPrint()
             delayedPrint("Press ENTER to contiune.", center=True); input()
 
@@ -687,7 +752,7 @@ def startMenu():
 
 
 def main() -> NoReturn:
-    # When the player exits a running game the start menu should come up, but when they exit from the
+    # When the player EXITs a running game the start menu should come up, but when they EXIT from the
     #   start menu it closes this program, so we can just use an infinite loop.
     while True: 
         startMenu()
