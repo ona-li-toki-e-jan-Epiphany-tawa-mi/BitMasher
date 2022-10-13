@@ -19,7 +19,6 @@ SCAN_TIME = 0.8
 SCAN_FAIL_CHANCE = 0.1
 
 # The number of steps the traverser can take before it gives up. 
-# TODO: Make it remove the item if it can't find a system.
 MAX_STEPS = 10
 # The chance that the traverser choses to move to an existing room over finding a new one, given as a 
 #   number between 0 and 1. Make larger for spikier maps.
@@ -507,13 +506,35 @@ def generateMap(requiredItems: Inventory) -> System:
                                     , System(systemPool[systemIndex], itemPool[itemIndex]))
                 break
 
+        # If the traverser was unable to place the item we need to remove it.
+        if stepsLeft < 0:
+            requiredItems.tryRemoveItem(itemPool[itemIndex])
+            systemIndex -= 1 # We set back the system index so the system can still be used.
+
         itemIndex   += 1
         systemIndex += 1
 
     # Removes required items that a room could not be made avalible for.
     if lastItemIndex is not None:
+        postgenRequiredItemsCount = requiredItems.countItems()
+
         for i in range(lastItemIndex, len(itemPool) - 1): # No need to remove RANSOMWARE, so -1.
             requiredItems.tryRemoveItem(itemPool[i])
+
+        # Warning for partial map generation.
+        clearScreen()
+        delayedPrint("WARNING: Unable to generate enough systems!", center=True)
+        delayedPrint("Could only place {} items from a pool of {}".format(
+                requiredItems.countItems(), postgenRequiredItemsCount)
+                    , center=True)
+        delayedPrint("There are only {} systems avalible in total for generation".format(
+                generateMap.systems)
+                    , center=True)
+        delayedPrint("Please notify the developer(s) so they can fix it", center=True)
+        delayedPrint()
+        delayedPrint("The game should still run fine, so feel free to continue PLAYing", center=True)
+        delayedPrint()
+        delayedPrint("Press ENTER to continue", center=True); input()
 
     return startingSystem
 
@@ -577,24 +598,7 @@ def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
         leave or they fail/complete it. """
     requiredItems = generateRequiredItems()
-    pregenRequiredItemsCount = requiredItems.countItems()
     currentSystem = generateMap(requiredItems)
-    # Warning for partial map generation.
-    if pregenRequiredItemsCount != requiredItems.countItems():
-        clearScreen()
-        delayedPrint("WARNING: Unable to generate enough systems!", center=True)
-        delayedPrint("Could only place {} items from a pool of {}".format(
-                requiredItems.countItems(), pregenRequiredItemsCount)
-                   , center=True)
-        delayedPrint("There are only {} systems avalible in total for generation".format(
-                generateMap.systems)
-                   , center=True)
-        delayedPrint("Please notify the developer(s) so they can fix it", center=True)
-        delayedPrint()
-        delayedPrint("The game should still run fine, so feel free to continue PLAYing", center=True)
-        delayedPrint()
-        delayedPrint("Press ENTER to continue", center=True); input()
-
     gameMenu = OptionSelector()
     inventory = Inventory()
     loseTime = time_ns() + requiredItems.countItems() * SECONDS_PER_SYSTEM * SECONDS_TO_NANOSECONDS
