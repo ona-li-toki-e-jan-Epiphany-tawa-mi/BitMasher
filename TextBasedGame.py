@@ -7,7 +7,6 @@ BitMasher, a text adventure game where you act as an antiviris attempting to rid
 @author Nathaniel Needham
 """
 
-#TODO: Move systems into enum.
 #TODO: Make extra item "SANDBOXER" which keeps the timer rolling while in the fight if missing.
 
 ## Configuration Section START
@@ -51,6 +50,8 @@ from shutil import get_terminal_size
 from sys import exit
 from time import sleep, time_ns
 from typing import Dict, Iterable, List, NoReturn, Tuple, Union
+
+SECONDS_TO_NANOSECONDS = 1_000_000_000
 
 
 
@@ -142,10 +143,11 @@ class ItemType(Enum):
     OS_OVERRIDE_CAPABILITY   = "OS override capability"
     RANSOMWARE_CODE_FRAGMENT = "RANSOMWARE code fragment"
     VULNERABILITY            = "Vulnerability"
-    RANSOMWARE               = 'The RANSOMWARE' # The RANSOMWARE is stored on the map as an item since 
+    SANDBOXER                = "SANDBOXER"
+    RANSOMWARE               = "The RANSOMWARE" # The RANSOMWARE is stored on the map as an item since 
                                                 #   there is not going to be an item in that room 
                                                 #   anyways.
-    NONE                     = 'None'
+    NONE                     = "None"
 
     def name(self) -> str:
         """ Returns the name of the item. """
@@ -260,7 +262,7 @@ class Fighter:
         """ Returns a human readable status that shows name, hp, and damage. """
         return f"{self.name}: {self.health} hp, {self.damage} dmg"
 
-def doRansomwareBattle(requiredItemsLeft: Inventory):
+def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
     """ PLAYs out the turn-based fight against the RANSOMWARE. """
     def moveDelay():
         """ Applies a short delay and prints a newline, which is done before every move in turn-based
@@ -272,6 +274,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
                                 not requiredItemsLeft.contains(ItemType.FULL_MEMORY_WRITE_ACCESS)
     adminPrivileges = not requiredItemsLeft.contains(ItemType.OS_OVERRIDE_CAPABILITY)
     dereferencer = not requiredItemsLeft.contains(ItemType.POINTER_DEREFERENCER)
+    sandboxed = not requiredItemsLeft.contains(ItemType.SANDBOXER)
 
     player = Fighter("You", FIGHTER_BASE_HEALTH, FIGHTER_BASE_DAMAGE + PLAYER_DAMAGE_BOOST)
     ransomware = Fighter("The RANSOMWARE"
@@ -298,8 +301,16 @@ def doRansomwareBattle(requiredItemsLeft: Inventory):
     awaitPlayer(center=True)
 
     while True:
+        if not sandboxed:
+            if time_ns() >= loseTime:
+                playLoseSequence()
+                break
+
         clearScreen()
         delayedPrint("The RANSOMWARE", center=True)
+        if not sandboxed: delayedPrint("Time left: {:.1F} second(s)".format(
+                (loseTime - time_ns()) / SECONDS_TO_NANOSECONDS)
+                                     , center=True)
         delayedPrint()
         delayedPrint(player.getDisplayableStatus())
         delayedPrint(ransomware.getDisplayableStatus())
@@ -598,6 +609,7 @@ def generateRequiredItems() -> Inventory:
     requiredItems.addItem(ItemType.FULL_MEMORY_WRITE_ACCESS)
     requiredItems.addItem(ItemType.POINTER_DEREFERENCER)
     requiredItems.addItem(ItemType.OS_OVERRIDE_CAPABILITY)
+    requiredItems.addItem(ItemType.SANDBOXER)
     requiredItems.addItem(ItemType.RANSOMWARE_CODE_FRAGMENT, count=random.randint(1, 3))
     requiredItems.addItem(ItemType.VULNERABILITY,            count=random.randint(1, 3))
 
@@ -627,8 +639,6 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
     delayedPrint()
     awaitPlayer(center=True)
 
-SECONDS_TO_NANOSECONDS = 1_000_000_000
-
 def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
         leave or they fail/complete it. """
@@ -645,7 +655,7 @@ def runGame():
             break
 
         if currentSystem.item is ItemType.RANSOMWARE:
-            doRansomwareBattle(requiredItems)
+            doRansomwareBattle(requiredItems, loseTime)
             break # Once the battle is over, the player either won or lost, so the game can be ended.
 
         clearScreen()
