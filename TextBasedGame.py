@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-BitMasher, a text adventure game where you act as an antiviris attempting to rid a computer of a 
+BitMasher, a text adventure game where you act as an antivirus attempting to rid a computer of a 
     ransomware attack.
 
 @author Nathaniel Needham
@@ -766,10 +766,10 @@ def startMenu():
                          ", AND RIGHT. Keep in mind that the map is NOT 2D; Moving RIGHT, UP, LEFT, and"
                          " DOWN will lead to a different room than the one you started in. The map is "
                          "'Spiky' so-to-speak.")
-            delayedPrint("\tYou have a scanner to aid in figuring out which rooms contain items and "
-                         "which have RANSOMWARE. Using the scanner will reveal what the surronding rooms"
-                         " contain, and the room you are currently in will be automatically scanned for "
-                         "you. But beware: SCANning takes time. Also, occasionaly a scan will fail and "
+            delayedPrint("\tYou have a SCANner to aid in figuring out which rooms contain items and "
+                         "which have RANSOMWARE. Using the SCANner will reveal what the surronding rooms"
+                         " contain, and the room you are currently in will be automatically SCANned for "
+                         "you. But beware: SCANning takes time. Also, occasionaly a SCAN will fail and "
                          "need to be repeated.")
             delayedPrint()
             delayedPrint("Good luck", center=True)
