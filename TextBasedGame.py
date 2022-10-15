@@ -230,7 +230,7 @@ def playLoseSequence():
         for k in range(0, 1000):
             print(chr(random.randint(0x21, 0x7E)), end='')
 
-        sleep(0.001)
+        sleep(0.1)
 
     clearScreen()
     delayedPrint("You have failed", center=True)
@@ -364,7 +364,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
                     for k in range(0, 1000):
                         print(";;;;)))))", end='')
 
-                    sleep(0.001)
+                    sleep(0.1)
 
                 break
 
