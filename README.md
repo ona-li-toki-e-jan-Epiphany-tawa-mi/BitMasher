@@ -16,6 +16,10 @@ Each system (room) contains an item, which you can move to; UP, DOWN, LEFT, AND 
 
 You have a SCANner to aid in figuring out which rooms contain items and which have RANSOMWARE. Using the SCANner will reveal what the surronding rooms contain, and the room you are currently in will be automatically SCANned for you. But beware: SCANning takes time. Also, occasionaly a SCAN will fail and need to be repeated.
 
+## Configuration
+
+There is a section at the top of the program file ["TextBasedGame.py"](TextBasedGame.py "BitMasher program file") containing configuration options. All config options bear a description detailing what they modify and what values they accept.
+
 ## How to Run
 
 The only requirement is having a Python intepreter installed on your system.
