@@ -342,7 +342,8 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
                     moveDelay()
                     clearScreen()
                     delayedPrint("Congratulations", center=True)
-                    delayedPrint("You have successfully EXTRACTed the RANSOMWARE")
+                    delayedPrint()
+                    delayedPrint("You have successfully EXTRACTed the RANSOMWARE", center=True)
                     delayedPrint()
                     awaitPlayer(center=True)
                     break
