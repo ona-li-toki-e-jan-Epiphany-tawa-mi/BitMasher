@@ -18,8 +18,9 @@ SCAN_TIME = 0.8
 # The chance a SCAN will fail, given as a number between 0 and 1.
 SCAN_FAIL_CHANCE = 0.1
 
-# The number of steps the traverser can take before it gives up. 
-MAX_STEPS = 10
+# The number of steps the traverser can take before it gives up. Higher values means it's more likely to generate a room, but
+#   loading times will have the potential to increase.
+MAX_STEPS = 100
 # The chance that the traverser choses to move to an existing room over finding a new one, given as a 
 #   number between 0 and 1. Make larger for spikier maps.
 MOVE_CHANCE = 0.7
@@ -45,7 +46,7 @@ import os
 import random
 from enum import Enum, auto
 from shutil import get_terminal_size
-from sys import exit
+from sys import exit, stdout
 from time import sleep, time_ns
 from typing import Dict, Iterable, List, NoReturn, Tuple, Union
 
@@ -66,7 +67,8 @@ def delayedPrint(message: str='', end: str='\n', center: bool=False):
     while True:
         sleep(SLOW_SCROLL_DELAY)
         messageChunk = message[remaining:remaining + screenWidth]
-        print(messageChunk if not center else centerMessage(messageChunk), end='')
+        # Prints flush the buffer since all text needs to appear with each call for the delay effect to work.
+        print(messageChunk if not center else centerMessage(messageChunk), end='', flush=True)
 
         remaining += screenWidth
         if remaining >= len(message):
@@ -76,6 +78,8 @@ def delayedPrint(message: str='', end: str='\n', center: bool=False):
 
 def clearScreen():
     """ Clears the terminal. """
+    # We flush the output buffer before clearing because if there is any residual it could be outputted after the clear.
+    stdout.flush()
     os.system('cls' if os.name=='nt' else 'clear')
 
 def awaitPlayer(center: bool=False):
@@ -225,11 +229,11 @@ def playLoseSequence():
     clearScreen()
         
     for i in range(0, 15):
-        print(chr(random.randint(0, 0x20)), end='')
         print(end='\a') # Beeps. Not always avalible.
         for k in range(0, 1000):
             print(chr(random.randint(0x21, 0x7E)), end='')
 
+        stdout.flush() # We need to flush so that all characters appear before clearing the screen.
         sleep(0.1)
 
     clearScreen()
@@ -353,6 +357,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
             moveDelay()
             damage = player.attack(player)
             delayedPrint("You are an antivirus, you have no means to DANCE")
+            moveDelay()
             delayedPrint("In the process you corrupted your own data, dealing {} dmg ({} hp remaining)"
                     .format(damage, player.health))
 
@@ -364,6 +369,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
                     for k in range(0, 1000):
                         print(";;;;)))))", end='')
 
+                    stdout.flush() # We need to flush so that all characters appear before clearing the screen.
                     sleep(0.1)
 
                 break
