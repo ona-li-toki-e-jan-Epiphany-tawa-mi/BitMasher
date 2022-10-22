@@ -429,21 +429,22 @@ class Direction(Enum):
         
 class SystemType(Enum):
     """ Represents the various systems that can be visited. """
-    BOOTLOADER                  = "The Bootloader"
-    REGISTRY                    = "The Registry"
-    NETWORK_INTERFACES          = "The Network interfaces"
-    KERNAL                      = "The Kernal"
-    HARD_DRIVE                  = "The Hard drive"        
-    WEBSURFER                   = "WebSurfer"                       # Not real. 
-    PAINTEREX                   = "PainterEX"                       # Not real.    
-    BITMASHER                   = "BitMasher"                       # ;).
-    ILO_LI_SINA_INTERPRETER     = "The ilo li sina Interpreter"     # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/ilo-li-sina
-    FREEWRITER                  = "FreeWriter"                      # Not real.
-    PIMG                        = "PIMG"                            # Not real.
-    ESPRESSO_RUNTIME_ENVIROMENT = "The Espresso Runtime Enviroment" # Not real.
-    SUPERCAD                    = "SuperCAD"                        # Not real.
-    MACRODOI                    = "MacroDoi"                        # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
-    CONWAYS_IVORY_TOWER         = "Conway's Ivory Tower"            # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Towery",                         
+    BOOTLOADER                   = "The Bootloader"
+    REGISTRY                     = "The Registry"
+    NETWORK_INTERFACES           = "The Network interfaces"
+    KERNAL                       = "The Kernal"
+    HARD_DRIVE                   = "The Hard drive"        
+    WEBSURFER                    = "WebSurfer"                       # Not real. 
+    PAINTEREX                    = "PainterEX"                       # Not real.    
+    BITMASHER                    = "BitMasher"                       # ;).
+    ILO_LI_SINA_INTERPRETER      = "The ilo li sina Interpreter"     # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/ilo-li-sina
+    FREEWRITER                   = "FreeWriter"                      # Not real.
+    PIMG                         = "PIMG"                            # Not real.
+    ESPRESSO_RUNTIME_ENVIROMENT  = "The Espresso Runtime Enviroment" # Not real.
+    SUPERCAD                     = "SuperCAD"                        # Not real.
+    MACRODOI                     = "MacroDoi"                        # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
+    CONWAYS_IVORY_TOWER          = "Conway's Ivory Tower"            # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Towery"
+    RANDOM_INFORMATION_GENERATOR = "Random-Information_Generator"    # https://github.com/FatherVonTayvious/Random-Information-Generator
 
 class System:
     """ Represents a system (room) within the game. """
