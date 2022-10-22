@@ -4,7 +4,15 @@
 BitMasher, a text adventure game where you act as an antivirus attempting to rid a computer of a 
     ransomware attack.
 
-@author Nathaniel Needham
+author: ona li toki e jan Epiphany tawa mi.
+ ______  __________________ _______  _______  _______           _______  _______ 
+(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )
+| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|
+| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|
+|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)
+| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   
+| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__
+|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 """
 
 ## Configuration Section START
@@ -739,6 +747,15 @@ def exitGame():
 
     exit(0)
 
+logo = [" ______  __________________ _______  _______  _______           _______  _______ ",
+        "(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )",
+        "| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|",
+        "| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|",
+        "|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)",
+        "| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   ",
+        "| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__",
+        "|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/"  ]
+
 def startMenu():
     """ Displays the start menu to the player. Player can EXIT the game from the menu. Returns when
         the user decides to PLAY."""
@@ -750,7 +767,10 @@ def startMenu():
 
     while True:
         clearScreen()
-        delayedPrint("BitMasher V4.3853256532", center=True) # Meaningless version number.
+        for line in logo:
+            delayedPrint(line, center=True) # Meaningless version number.
+        delayedPrint()
+        delayedPrint("V4.3853256532", center=True) # Meaningless version number.
         delayedPrint()
         delayedPrint("Type and enter the character in brackets to select an option.", center=True)
         delayedPrint()
