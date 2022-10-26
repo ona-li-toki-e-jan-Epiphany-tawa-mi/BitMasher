@@ -130,17 +130,18 @@ class OptionSelector:
             delayedPrint(message)
 
         while True:
-            choice = input().lower()
+            choice = input()
+            sanatizedChoice = choice.strip().lower()
 
             # If the user entered nothing there's no real reason to throw an error.
-            if choice == '':
+            if not sanatizedChoice:
                 continue
 
-            if choice[0] not in self.options:
+            if sanatizedChoice[0] not in self.options:
                 delayedPrint(f"Error: Invalid option '{choice}'!")
                 continue
 
-            return choice
+            return sanatizedChoice
 
 
 
@@ -153,7 +154,7 @@ class ItemType(Enum):
     OS_OVERRIDE_CAPABILITY   = "OS override capability"
     RANSOMWARE_CODE_FRAGMENT = "RANSOMWARE code fragment"
     VULNERABILITY            = "Vulnerability"
-    SANDBOXER                = "SANDBOXER"
+    SANDBOXER                = "Sandboxer"
     RANSOMWARE               = "The RANSOMWARE" # The RANSOMWARE is stored on the map as an item since 
                                                 #   there is not going to be an item in that room 
                                                 #   anyways.
@@ -415,9 +416,9 @@ class ScanResult(Enum):
 
 class Direction(Enum):
     """ Represents a physical direction in which to travel. """
-    UP = auto()
-    DOWN = auto()
-    LEFT = auto()
+    UP    = auto()
+    DOWN  = auto()
+    LEFT  = auto()
     RIGHT = auto()
 
     def opposite(self) -> 'Direction':
@@ -444,7 +445,7 @@ class SystemType(Enum):
     SUPERCAD                     = "SuperCAD"                        # Not real.
     MACRODOI                     = "MacroDoi"                        # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
     CONWAYS_IVORY_TOWER          = "Conway's Ivory Tower"            # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Towery"
-    RANDOM_INFORMATION_GENERATOR = "Random-Information_Generator"    # https://github.com/FatherVonTayvious/Random-Information-Generator
+    RANDOM_INFORMATION_GENERATOR = "Random-Information-Generator"    # https://github.com/FatherVonTayvious/Random-Information-Generator
 
 class System:
     """ Represents a system (room) within the game. """
