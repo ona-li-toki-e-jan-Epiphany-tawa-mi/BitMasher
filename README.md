@@ -29,17 +29,52 @@ You have a SCANner to aid in figuring out which rooms contain items and which ha
 
 ## Configuration
 
-There is a section at the top of the program file ["TextBasedGame.py"](TextBasedGame.py "BitMasher program file") containing configuration options. All config options bear a description detailing what they modify and what values they accept.
+There is a section at the top of the program file ([TextBasedGame.py](src/bitmasher_game/TextBasedGame.py "BitMasher program file")) containing configuration options. All config options bear a description detailing what they modify and what values they accept.
 
-## How to Run
+## Installation
 
-The only requirement is having a Python intepreter installed on your system.
-
-Execute the following command(s) in the project directory:
+BitMasher is avalible on PyPi, and can be installed by running the following command(s):
 
 ```console
-$ python3 TextBasedGame.py
+pip install bitmasher_game
 ```
+
+Alternatively, you can download the latest package from [Releases,](https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/BitMasher/releases "BitMasher releases.") or build from source, and install it using the following command(s):
+
+```console
+pip install <package name goes here>
+```
+
+BitMasher can also be ran directly as a simple script without installation. See [How to Run](README.md#how-to-run "How to run section.")
+
+## How to run
+
+If installed, run the following command(s):
+
+```console
+bitmasher
+```
+
+BitMasher is, itself, a stand-alone script ([TextBasedGame.py](src/bitmasher_game/TextBasedGame.py "TextBasedGame.py")), and can be ran without installation by running one of the following command(s) in the project directory:
+
+```console
+python3 src/bitmasher_game/TextBasedGame.py
+./src/bitmasher_game/TextBasedGame.py
+```
+
+## How to build
+
+Run the following commands in the project directory:
+
+```console
+python3 -m build
+```
+
+The built packages will appear in [dist/.](dist "Distributables folder.")
+
+## Dependencies
+
+The only dependency is [Python 3.](https://www.python.org "Python homepage")
 
 ## Links
 
