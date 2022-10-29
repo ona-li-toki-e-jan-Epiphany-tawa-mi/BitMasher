@@ -33,7 +33,7 @@ There is a section at the top of the program file ([TextBasedGame.py](src/bitmas
 
 ## Installation
 
-BitMasher is avalible on PyPi, and can be installed by running the following command(s):
+BitMasher is avalible on [PyPi,](https://pypi.org/project/bitmasher-game "Bitmasher page on PyPi") and can be installed by running the following command(s):
 
 ```console
 pip install bitmasher_game
