@@ -76,6 +76,10 @@ The built packages will appear in [dist/.](dist "Distributables folder.")
 
 The only dependency is [Python 3.](https://www.python.org "Python homepage")
 
+## Bugs
+
+You can report bugs to (https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/BitMasher/issues).
+
 ## Links
 
 Demonstration:<br>
