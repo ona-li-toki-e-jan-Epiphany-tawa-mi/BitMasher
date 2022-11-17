@@ -80,6 +80,12 @@ The only dependency is [Python 3.](https://www.python.org "Python homepage")
 
 You can report bugs to (https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/BitMasher/issues).
 
+## Support
+
+If you like BitMasher and wish to support me, consider at one of the following link(s):
+
+https://github.com/sponsors/ona-li-toki-e-jan-Epiphany-tawa-mi
+
 ## Links
 
 Demonstration:<br>
