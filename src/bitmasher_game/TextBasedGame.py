@@ -1,16 +1,38 @@
 #!/usr/bin/env python3
 
-"""
-BitMasher, a text adventure game where you act as an antivirus attempting to rid a computer of a 
-    ransomware attack.
+################################################################################
+# MIT License                                                                  #
+#                                                                              #
+# Copyright (c) 2022 ona-li-toki-e-jan-Epiphany-tawa-mi                        #
+#                                                                              #
+# Permission is hereby granted, free of charge, to any person obtaining a copy #
+# of this software and associated documentation files (the "Software"), to     #
+# deal in the Software without restriction, including without limitation the   #
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or  #
+# sell copies of the Software, and to permit persons to whom the Software is   #
+# furnished to do so, subject to the following conditions:                     #
+#                                                                              #
+# The above copyright notice and this permission notice shall be included in   #
+# all copies or substantial portions of the Software.                          #
+#                                                                              #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR   #
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,     #
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  #
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER       #
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING      #
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS #
+# IN THE SOFTWARE.                                                             #
+################################################################################
 
-author: ona li toki e jan Epiphany tawa mi.
- ______  __________________ _______  _______  _______           _______  _______ 
+"""
+BitMasher, a text adventure game where you act as an antivirus attempting to rid a computer of a
+    ransomware attack.
+ ______  __________________ _______  _______  _______           _______  _______
 (  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )
 | (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|
 | (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|
 |  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)
-| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   
+| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (
 | )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__
 |/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 """
@@ -29,7 +51,7 @@ SCAN_FAIL_CHANCE = 0.1
 # The number of steps the traverser can take before it gives up. Higher values means it's more likely to generate a room, but
 #   loading times will have the potential to increase.
 MAX_STEPS = 100
-# The chance that the traverser choses to move to an existing room over finding a new one, given as a 
+# The chance that the traverser choses to move to an existing room over finding a new one, given as a
 #   number between 0 and 1. Make larger for spikier maps.
 MOVE_CHANCE = 0.7
 
@@ -41,7 +63,7 @@ FIGHTER_BASE_HEALTH = 50
 CODE_FRAGMENT_HEALTH_BOOST = 25
 # Base damage for all fighters.
 FIGHTER_BASE_DAMAGE = 10
-# The additional damage points the player gets. Must be larger than or equal to 0 for the player to 
+# The additional damage points the player gets. Must be larger than or equal to 0 for the player to
 #   win whatsoever.
 PLAYER_DAMAGE_BOOST = 5
 # The damage boost the RANSOMWARE gets per missing vulnerability.
@@ -98,8 +120,8 @@ def awaitPlayer(center: bool=False):
 
 class OptionSelector:
     """ Used to easily create selection menus where users are given a choice among a list of options.
-        
-        Use addOption() to set up the menu, and then use getSelection() to have the user select 
+
+        Use addOption() to set up the menu, and then use getSelection() to have the user select
         something. """
     options:  List[str]
     messages: List[str]
@@ -109,8 +131,8 @@ class OptionSelector:
         self.messages = []
 
     def addOption(self, characterCode: str, message: str):
-        """ Adds a new option. The character code is what the user will type to select that option. 
-            Put only a single character, will be made lowercase if possible. Options and messages are 
+        """ Adds a new option. The character code is what the user will type to select that option.
+            Put only a single character, will be made lowercase if possible. Options and messages are
             displayed in the order they are added."""
         self.options.append(characterCode[0].lower())
         self.messages.append(message)
@@ -146,7 +168,7 @@ class OptionSelector:
 
 
 class ItemType(Enum):
-    """ Represents the various types of items that can be collected. Also is used to represent the 
+    """ Represents the various types of items that can be collected. Also is used to represent the
         ransomware on the map."""
     FULL_MEMORY_READ_ACCESS  = "Full memory read access"
     FULL_MEMORY_WRITE_ACCESS = "Full memory write access"
@@ -155,8 +177,8 @@ class ItemType(Enum):
     RANSOMWARE_CODE_FRAGMENT = "RANSOMWARE code fragment"
     VULNERABILITY            = "Vulnerability"
     SANDBOXER                = "Sandboxer"
-    RANSOMWARE               = "The RANSOMWARE" # The RANSOMWARE is stored on the map as an item since 
-                                                #   there is not going to be an item in that room 
+    RANSOMWARE               = "The RANSOMWARE" # The RANSOMWARE is stored on the map as an item since
+                                                #   there is not going to be an item in that room
                                                 #   anyways.
     NONE                     = "None"
 
@@ -179,7 +201,7 @@ class Inventory:
             self.items[item] = count
 
     def tryRemoveItem(self, item: ItemType, count: int=1) -> bool:
-        """ Attempts to remove the given item from the INVENTORY. If the item is not present or the 
+        """ Attempts to remove the given item from the INVENTORY. If the item is not present or the
             number to remove exceeds the amount stored within, this does nothing and returns false.
             If the items were removed, this returns true."""
         if not self.items or self.items[item] < count:
@@ -236,7 +258,7 @@ class Inventory:
 def playLoseSequence():
     """ Displays the normal losing sequence when you die. """
     clearScreen()
-        
+
     for i in range(0, 15):
         print(end='\a') # Beeps. Not always avalible.
         for k in range(0, 1000):
@@ -290,9 +312,9 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
 
     player = Fighter("You", FIGHTER_BASE_HEALTH, FIGHTER_BASE_DAMAGE + PLAYER_DAMAGE_BOOST)
     ransomware = Fighter("The RANSOMWARE"
-                       , FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST * 
+                       , FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST *
             requiredItemsLeft.countItem(ItemType.RANSOMWARE_CODE_FRAGMENT)
-                       , FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST * 
+                       , FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST *
             requiredItemsLeft.countItem(ItemType.VULNERABILITY))
 
     fightMenu = OptionSelector()
@@ -387,7 +409,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
         elif choice == 'e':
             break
 
-        
+
         # RANSOMWARE attack sequence.
         moveDelay()
         delayedPrint("The RANSOMWARE attempts to deliver a payload...")
@@ -427,16 +449,16 @@ class Direction(Enum):
         elif self is Direction.DOWN: return Direction.UP
         elif self is Direction.LEFT: return Direction.RIGHT
         else:                        return Direction.LEFT
-        
+
 class SystemType(Enum):
     """ Represents the various systems that can be visited. """
     BOOTLOADER                   = "The Bootloader"
     REGISTRY                     = "The Registry"
     NETWORK_INTERFACES           = "The Network interfaces"
     KERNAL                       = "The Kernal"
-    HARD_DRIVE                   = "The Hard drive"        
-    WEBSURFER                    = "WebSurfer"                       # Not real. 
-    PAINTEREX                    = "PainterEX"                       # Not real.    
+    HARD_DRIVE                   = "The Hard drive"
+    WEBSURFER                    = "WebSurfer"                       # Not real.
+    PAINTEREX                    = "PainterEX"                       # Not real.
     BITMASHER                    = "BitMasher"                       # ;).
     ILO_LI_SINA_INTERPRETER      = "The ilo li sina Interpreter"     # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/ilo-li-sina
     FREEWRITER                   = "FreeWriter"                      # Not real.
@@ -492,13 +514,13 @@ class System:
             canFail is left true. The new result is also returned. """
         scanResult = None
 
-        if canFail and random.random() <= SCAN_FAIL_CHANCE: 
+        if canFail and random.random() <= SCAN_FAIL_CHANCE:
             scanResult = ScanResult.ERROR
-        elif self.item is ItemType.RANSOMWARE: 
+        elif self.item is ItemType.RANSOMWARE:
             scanResult = ScanResult.SUSPICOUS
-        elif self.item is not ItemType.NONE: 
+        elif self.item is not ItemType.NONE:
             scanResult = ScanResult.ABNORMAL
-        else:                         
+        else:
             scanResult = ScanResult.EMPTY
 
         self.scanResult = scanResult
@@ -527,7 +549,7 @@ def generateSystemPool() -> List[SystemType]:
     return systemPool
 
 def generateMap(requiredItems: Inventory) -> System:
-    """ Generates a new game map with randomly placed systems populated with items and the 
+    """ Generates a new game map with randomly placed systems populated with items and the
         randsomeware. Returns the starting system. """
     startingSystem = System(SystemType.BOOTLOADER)
     itemPool = requiredItems.toItemList()
@@ -535,7 +557,7 @@ def generateMap(requiredItems: Inventory) -> System:
 
     random.shuffle(itemPool)
     itemPool.append(ItemType.RANSOMWARE) # We append the RANSOMWARE after the items have been shuffled as
-                                         #     it needs to be generated last to ensure that there is a 
+                                         #     it needs to be generated last to ensure that there is a
                                          #     path to every item, that it is not blocked by it.
     random.shuffle(systemPool)
 
@@ -546,7 +568,7 @@ def generateMap(requiredItems: Inventory) -> System:
     # All requried items must be generated, but not all rooms, thus we iterate through each item and
     #   generate a room for it.
     while itemIndex < len(itemPool):
-        # If this index meets or exceeds the size of the system pool, i.e. there a more items then 
+        # If this index meets or exceeds the size of the system pool, i.e. there a more items then
         #   systems, we need to reduce the amount of items required so we can fit them on the map.
         if systemIndex >= len(systemPool) - 1:
             # We only want the first unavalible item index to know which items will have to be removed.
@@ -562,7 +584,7 @@ def generateMap(requiredItems: Inventory) -> System:
             stepsLeft -= 1
 
             if random.random() < MOVE_CHANCE:
-                possibleDirections = [direction for direction in list(Direction) 
+                possibleDirections = [direction for direction in list(Direction)
                                       if traverser[direction] is not None and
                                          direction is not previousDirection]
                 if not possibleDirections:
@@ -574,7 +596,7 @@ def generateMap(requiredItems: Inventory) -> System:
                 previousDirection = nextDirection.opposite()
 
             else:
-                possibleDirections = [direction for direction in list(Direction) 
+                possibleDirections = [direction for direction in list(Direction)
                                       if traverser[direction] is None]
                 if not possibleDirections:
                     stepsLeft += 1
@@ -621,7 +643,7 @@ def generateMap(requiredItems: Inventory) -> System:
 def generateRequiredItems() -> Inventory:
     """ Generates a list of the items that must be gathered to defeat the RANSOMWARE. """
     requiredItems = Inventory()
-    
+
     requiredItems.addItem(ItemType.FULL_MEMORY_READ_ACCESS)
     requiredItems.addItem(ItemType.FULL_MEMORY_WRITE_ACCESS)
     requiredItems.addItem(ItemType.POINTER_DEREFERENCER)
@@ -652,7 +674,7 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
     else:
         for item, count in requiredItems:
             delayedPrint(f"- {item.name()}: {count}", center=True)
-    
+
     delayedPrint()
     awaitPlayer(center=True)
 
@@ -727,7 +749,7 @@ def runGame():
             sleep(SCAN_TIME)
 
             for _, system in currentSystem:
-                if system is None: 
+                if system is None:
                     continue
 
                 system.tryScan()
@@ -776,7 +798,7 @@ def startMenu():
         delayedPrint()
         delayedPrint("Type and enter the character in brackets to select an option.", center=True)
         delayedPrint()
-        
+
         choice = startMenu.getSelection()
         if choice == 'e':
             exitGame()
@@ -803,7 +825,7 @@ def startMenu():
             delayedPrint()
             delayedPrint("Good luck", center=True)
             delayedPrint()
-            awaitPlayer(center=True) 
+            awaitPlayer(center=True)
 
         elif choice == 'a':
             clearScreen()
@@ -831,9 +853,9 @@ def startMenu():
 def main() -> NoReturn:
     # When the player EXITs a running game the start menu should come up, but when they EXIT from the
     #   start menu it closes this program, so we can just use an infinite loop.
-    while True: 
+    while True:
         startMenu()
         runGame()
-    
+
 if __name__ == '__main__':
     main()
