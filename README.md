@@ -1,10 +1,10 @@
 ```text
- ______  __________________ _______  _______  _______           _______  _______ 
+ ______  __________________ _______  _______  _______           _______  _______
 (  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )
 | (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|
 | (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|
 |  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)
-| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   
+| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (
 | )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__
 |/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 ```
@@ -83,4 +83,4 @@ You can report bugs to (https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Bi
 ## Links
 
 Demonstration:<br>
-https://www.youtube.com/watch?v=zxC5pLrn6N8
+https://odysee.com/@ona-li-toki-e-jan-Epiphany-tawa-mi:9/BitMasher-A-fast-paced-text-based-game-born-from-my-frustration-and-pettiness:d?r=HYroMZaqrVN4gL5oSJ35gcTgt3K56r39
