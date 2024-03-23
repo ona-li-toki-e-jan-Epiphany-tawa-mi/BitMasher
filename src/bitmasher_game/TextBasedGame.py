@@ -3,7 +3,7 @@
 ################################################################################
 # MIT License                                                                  #
 #                                                                              #
-# Copyright (c) 2022 ona-li-toki-e-jan-Epiphany-tawa-mi                        #
+# Copyright (c) 2022,2024 ona-li-toki-e-jan-Epiphany-tawa-mi                   #
 #                                                                              #
 # Permission is hereby granted, free of charge, to any person obtaining a copy #
 # of this software and associated documentation files (the "Software"), to     #
@@ -255,21 +255,58 @@ class Inventory:
             return False
 
 
-def playLoseSequence():
+
+def randomCharacter():
+    """ Generates a random printable ASCII character. """
+    return chr(random.randint(0x21, 0x7E))
+
+def garbleString(string: str):
+    """ Randomly replaces characters within a string. """
+    mutableString  = list(string)
+    characterCount = len(mutableString)
+    replacements   = random.randint(0, characterCount)
+
+    for i in range(0, replacements):
+        index                = random.randrange(0, characterCount)
+        mutableString[index] = randomCharacter()
+
+    return "".join(mutableString)
+
+def annoyingCase(string: str):
+    """ Randomly changes the case of letters in the string. """
+    mutableString = list(string)
+
+    for i in range(0, len(mutableString)):
+        mutableString[i] = mutableString[i].lower() if random.randint(0, 1) == 1 else mutableString[i].upper()
+
+    return "".join(mutableString)
+
+def playLoseSequence(funny: bool=False):
     """ Displays the normal losing sequence when you die. """
     clearScreen()
+
+    # Function to generate text fill the screen with.
+    spamGenerator = randomCharacter if not funny else (lambda: ";)")
 
     for i in range(0, 15):
         print(end='\a') # Beeps. Not always avalible.
         for k in range(0, 1000):
-            print(chr(random.randint(0x21, 0x7E)), end='')
+            print(spamGenerator(), end='')
 
-        stdout.flush() # We need to flush so that all characters appear before clearing the screen.
+        # We need to flush so that all characters appear before clearing the
+        # screen.
+        stdout.flush()
         sleep(0.1)
 
     clearScreen()
-    delayedPrint("You have failed", center=True)
-    delayedPrint("All systems gave been taken over", center=True)
+    for i in range(0, random.randint(5, 10)):
+        delayedPrint(garbleString("GAME OVER GAME OVER GAME OVER"), center=True)
+    delayedPrint()
+    delayedPrint(annoyingCase("All Your systems are belong to us"), center=True)
+    delayedPrint()
+    for i in range(0, random.randint(20, 40)):
+        delayedPrint(";;;;;;;;)))))", end='')
+    print()
     delayedPrint()
     awaitPlayer(center=True)
 
@@ -396,14 +433,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
             # Special end if player kills themself.
             if player.isDead():
                 moveDelay()
-                for i in range(0, 15):
-                    print(end='\a') # Beeps. Not always avalible.
-                    for k in range(0, 1000):
-                        print(";;;;)))))", end='')
-
-                    stdout.flush() # We need to flush so that all characters appear before clearing the screen.
-                    sleep(0.1)
-
+                playLoseSequence(funny=True)
                 break
 
         elif choice == 'e':
@@ -794,7 +824,7 @@ def startMenu():
         for line in logo:
             delayedPrint(line, center=True) # Meaningless version number.
         delayedPrint()
-        delayedPrint("V4.3853256532", center=True) # Meaningless version number.
+        delayedPrint("V5.74351224532", center=True) # Meaningless version number.
         delayedPrint()
         delayedPrint("Type and enter the character in brackets to select an option.", center=True)
         delayedPrint()

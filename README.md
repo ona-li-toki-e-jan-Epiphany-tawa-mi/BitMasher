@@ -88,6 +88,10 @@ python3 -m build
 
 The built packages will appear in `dist/`.
 
+## Release Notes
+
+- "Improved" lose sequence.
+
 ## Bugs
 
 Report bugs to:<br>

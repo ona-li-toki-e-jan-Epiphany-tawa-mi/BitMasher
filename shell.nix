@@ -2,7 +2,8 @@
 
 pkgs.mkShell {
   nativeBuildInputs = with pkgs.buildPackages; [
-    python3
+    python311
     python311Packages.build
+    python311Packages.twine
   ];
 }
