@@ -68,6 +68,13 @@ and can be installed by running the following command(s):
 pip install bitmasher_game
 ```
 
+You can also install it with Nix from the [(CLEARNET) NUR](https://github.com/nix-community/NUR)
+with the following attribute:
+
+```nix
+nur.repos.ona-li-toki-e-jan-Epiphany-tawa-mi.bitmasher
+```
+
 ## How to build
 
 You will need Python 3 and the Python build module installed on your system.
