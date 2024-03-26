@@ -61,15 +61,16 @@ bitmasher
 
 ## Installation
 
-BitMasher is avalible on [(CLEARNET) PyPi,](https://pypi.org/project/bitmasher-game "Bitmasher page on PyPi")
-and can be installed by running the following command(s):
+BitMasher is avalible on CLEARNET PyPi
+(https://pypi.org/project/bitmasher-game), and can be installed by running the
+following command(s):
 
 ```console
 pip install bitmasher_game
 ```
 
-You can also install it with Nix from the [(CLEARNET) NUR](https://github.com/nix-community/NUR)
-with the following attribute:
+You can also install it with Nix from the NUR
+(https://github.com/nix-community/NUR) with the following attribute:
 
 ```nix
 nur.repos.ona-li-toki-e-jan-Epiphany-tawa-mi.bitmasher
