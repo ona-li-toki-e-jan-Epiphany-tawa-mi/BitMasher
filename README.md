@@ -14,6 +14,34 @@
 A text adventure game where you act as an antivirus attempting to rid a computer
 of a RANSOMWARE attack.
 
+## How to run
+
+Dendencies:
+
+- Python 3
+
+Then, run one of the following commands to get started:
+
+```
+python3 src/bitmasher_game/TextBasedGame.py
+```
+
+## Installation
+
+BitMasher is avalible on PyPi (https://pypi.org/project/bitmasher-game), and can
+be installed by running the following command(s):
+
+```console
+pip install bitmasher_game
+```
+
+You can also install it with Nix from the NUR
+(https://github.com/nix-community/NUR) with the following attribute:
+
+```nix
+nur.repos.ona-li-toki-e-jan-Epiphany-tawa-mi.bitmasher
+```
+
 ## Controls
 
 Each option you can select will be shown by a single character in paranthesis.
@@ -46,42 +74,16 @@ There is a section at the top of the program file
 config options bear a description detailing what they modify and what values
 they accept.
 
-## How to run
+## How to build (for distribution)
 
-You will need Python 3 installed on your system.
+Dependencies:
+- Python 3.
+- Python `build` module.
 
-BitMasher is, itself, a stand-alone Python script
-`src/bitmasher_game/TextBasedGame.py`, and can be ran without installation.
+There is a `flake.nix` you can use with `nix develop path:.` to generate a
+development environment.
 
-If installed, run the following command(s):
-
-```console
-bitmasher
-```
-
-## Installation
-
-BitMasher is avalible on CLEARNET PyPi
-(https://pypi.org/project/bitmasher-game), and can be installed by running the
-following command(s):
-
-```console
-pip install bitmasher_game
-```
-
-You can also install it with Nix from the NUR
-(https://github.com/nix-community/NUR) with the following attribute:
-
-```nix
-nur.repos.ona-li-toki-e-jan-Epiphany-tawa-mi.bitmasher
-```
-
-## How to build
-
-You will need Python 3 and the Python build module installed on your system.
-There is a `shell.nix` you can use with `nix-shell` to get them.
-
-Run the following commands in the project directory:
+Then, run the following command(s) in the project directory:
 
 ```console
 python3 -m build
@@ -89,16 +91,11 @@ python3 -m build
 
 The built packages will appear in `dist/`.
 
-## Release Notes
-
-- "Improved" lose sequence.
-
-## Bugs
-
-Report bugs to:<br>
-https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/BitMasher/issues
-
 ## Links
 
 Demonstration:<br>
 https://odysee.com/@ona-li-toki-e-jan-Epiphany-tawa-mi:9/BitMasher-A-fast-paced-text-based-game-born-from-my-frustration-and-pettiness:d?r=HYroMZaqrVN4gL5oSJ35gcTgt3K56r39
+
+## Release Notes
+
+- "Improved" lose sequence.
