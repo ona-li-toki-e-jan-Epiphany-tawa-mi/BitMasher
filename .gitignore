@@ -2,3 +2,4 @@ dist/
 src/bitmasher_game.egg-info/
 
 flake.lock
+result
