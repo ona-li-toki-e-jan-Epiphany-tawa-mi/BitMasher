@@ -35,13 +35,10 @@
     in
       {
         devShells = forSystems ({ pkgs }: {
-          default = with pkgs; (buildFHSEnv {
-            name = "brainblast-toolkit-build-environment";
-            targetPkgs = pkgs: with pkgs; [
-              python311
-
-              python311Packages.build
-              python311Packages.twine
+          default = (pkgs.python3.buildEnv.override {
+            extraLibs = with pkgs.python3Packages; [
+              build
+              twine
             ];
           }).env;
         });
