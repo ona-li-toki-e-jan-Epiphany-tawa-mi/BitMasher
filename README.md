@@ -9,6 +9,10 @@
 |/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 ```
 
+View build status/get prebuilt wheel packages:
+- I2P: http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/hydra/jobset/bitmasher/master/latest-eval
+- Tor: http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/hydra/jobset/bitmasher/master/latest-eval
+
 # BitMasher
 
 A text adventure game where you act as an antivirus attempting to rid a computer
@@ -74,7 +78,7 @@ There is a section at the top of the program file
 config options bear a description detailing what they modify and what values
 they accept.
 
-## How to build (for distribution)
+## How to Build (for distribution)
 
 Dependencies:
 - Python 3.
