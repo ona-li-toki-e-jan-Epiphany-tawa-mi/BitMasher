@@ -10,6 +10,7 @@
 ```
 
 View build status/get prebuilt wheel packages:
+
 - I2P: http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/hydra/jobset/bitmasher/master/latest-eval
 - Tor: http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/hydra/jobset/bitmasher/master/latest-eval
 
@@ -81,6 +82,7 @@ they accept.
 ## How to Build (for distribution)
 
 Dependencies:
+
 - Python 3.
 - Python `build` module.
 
