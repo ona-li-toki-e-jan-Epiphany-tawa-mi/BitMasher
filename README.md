@@ -11,8 +11,8 @@
 
 View build status/get prebuilt wheel packages:
 
-- I2P: http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/hydra/jobset/bitmasher/master/latest-eval
-- Tor: http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/hydra/jobset/bitmasher/master/latest-eval
+- I2P: [http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/hydra/jobset/bitmasher/master/latest-eval](http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/hydra/jobset/bitmasher/master/latest-eval)
+- Tor: [http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/hydra/jobset/bitmasher/master/latest-eval](http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/hydra/jobset/bitmasher/master/latest-eval)
 
 # BitMasher
 
@@ -33,15 +33,17 @@ python3 src/bitmasher_game/TextBasedGame.py
 
 ## Installation
 
-BitMasher is avalible on PyPi (https://pypi.org/project/bitmasher-game), and can
-be installed by running the following command(s):
+BitMasher is avalible on PyPi
+([https://pypi.org/project/bitmasher-game](https://pypi.org/project/bitmasher-game)),
+and can be installed by running the following command(s):
 
 ```console
 pip install bitmasher_game
 ```
 
 You can also install it with Nix from the NUR
-(https://github.com/nix-community/NUR) with the following attribute:
+([https://github.com/nix-community/NUR](https://github.com/nix-community/NUR))
+with the following attribute:
 
 ```nix
 nur.repos.ona-li-toki-e-jan-Epiphany-tawa-mi.bitmasher
