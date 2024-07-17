@@ -97,11 +97,6 @@ python3 -m build
 
 The built packages will appear in `dist/`.
 
-## Links
-
-Demonstration:<br>
-https://odysee.com/@ona-li-toki-e-jan-Epiphany-tawa-mi:9/BitMasher-A-fast-paced-text-based-game-born-from-my-frustration-and-pettiness:d?r=HYroMZaqrVN4gL5oSJ35gcTgt3K56r39
-
 ## Release Notes
 
 - "Improved" lose sequence.
