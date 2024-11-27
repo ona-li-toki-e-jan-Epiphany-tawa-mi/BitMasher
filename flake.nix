@@ -17,24 +17,21 @@
 {
   description = "BitMasher development environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.11";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs = { self, nixpkgs }:
-    let
-      lib = nixpkgs.lib;
+    let inherit (nixpkgs.lib) genAttrs systems;
 
-      forSystems = f: lib.genAttrs lib.systems.flakeExposed (system: f {
-        pkgs = import nixpkgs { inherit system; };
-      });
-    in
-      {
-        devShells = forSystems ({ pkgs }: {
-          default = (pkgs.python3.buildEnv.override {
-            extraLibs = with pkgs.python3Packages; [
-              build
-              twine
-            ];
-          }).env;
+        forSystems = f: genAttrs systems.flakeExposed (system: f {
+          pkgs = import nixpkgs { inherit system; };
         });
-      };
-  }
+    in {
+      devShells = forSystems ({ pkgs }: {
+        default = with pkgs; mkShell {
+          nativeBuildInputs = [
+            python3
+          ];
+        };
+      });
+    };
+}

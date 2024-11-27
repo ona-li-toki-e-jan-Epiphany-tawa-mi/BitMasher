@@ -1,5 +1,2 @@
-dist/
-src/bitmasher_game.egg-info/
-
+# Nix.
 flake.lock
-result

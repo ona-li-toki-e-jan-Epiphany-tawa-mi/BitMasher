@@ -9,11 +9,6 @@
 |/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 ```
 
-View build status/get prebuilt wheel packages:
-
-- I2P: [http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/hydra/jobset/bitmasher/master/latest-eval](http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/hydra/jobset/bitmasher/master/latest-eval)
-- Tor: [http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/hydra/jobset/bitmasher/master/latest-eval](http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/hydra/jobset/bitmasher/master/latest-eval)
-
 # BitMasher
 
 A text adventure game where you act as an antivirus attempting to rid a computer
@@ -23,12 +18,13 @@ of a RANSOMWARE attack.
 
 Dendencies:
 
-- Python 3
+- Python 3 - [https://www.python.org](https://www.python.org/)
 
-Then, run one of the following commands to get started:
+Then, run one of the following commands to play:
 
 ```
-python3 src/bitmasher_game/TextBasedGame.py
+python3 bitmasher.py
+./bitmasher.py
 ```
 
 ## Installation
@@ -68,29 +64,6 @@ need to be repeated.
 
 ## Configuration
 
-There is a section at the top of the program file
-`src/bitmasher_game/TextBasedGame.py` containing configuration options. All
-config options bear a description detailing what they modify and what values
-they accept.
-
-## How to Build (for distribution)
-
-Dependencies:
-
-- Python 3.
-- Python `build` module.
-
-There is a `flake.nix` you can use with `nix develop path:.` to generate a
-development environment.
-
-Then, run the following command(s) in the project directory:
-
-```console
-python3 -m build
-```
-
-The built packages will appear in `dist/`.
-
-## Release Notes
-
-- "Improved" lose sequence.
+There is a section at the top of the script containing configuration
+options. All config options bear a description detailing what they modify and
+what values they accept.
