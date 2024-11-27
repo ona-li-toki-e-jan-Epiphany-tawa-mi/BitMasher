@@ -29,8 +29,20 @@ BitMasher, a text adventure game where you act as an antivirus attempting to rid
 |/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 """
 
-## Configuration Section START
-# The time, in seconds, between printing each line that gives the slow scroll effect.
+import os
+import random
+from enum import Enum, auto
+from shutil import get_terminal_size
+from sys import exit, stdout
+from time import sleep, time_ns
+from typing import Dict, Iterable, List, NoReturn, Tuple, Union
+
+################################################################################
+# Configuration                                                                #
+################################################################################
+
+# The time, in seconds, between printing each line that gives the slow scroll
+# effect.
 SLOW_SCROLL_DELAY = 0.11
 
 # The amount of time the player is given per system generated.
@@ -60,17 +72,10 @@ FIGHTER_BASE_DAMAGE = 10
 PLAYER_DAMAGE_BOOST = 5
 # The damage boost the RANSOMWARE gets per missing vulnerability.
 VULNERABILITY_DAMAGE_BOOST = 10
-## Configuration Section END
 
-
-
-import os
-import random
-from enum import Enum, auto
-from shutil import get_terminal_size
-from sys import exit, stdout
-from time import sleep, time_ns
-from typing import Dict, Iterable, List, NoReturn, Tuple, Union
+################################################################################
+# IO                                                                           #
+################################################################################
 
 SECONDS_TO_NANOSECONDS = 1_000_000_000
 
@@ -246,7 +251,9 @@ class Inventory:
         except KeyError:
             return False
 
-
+################################################################################
+# Battle                                                                       #
+################################################################################
 
 def randomCharacter():
     """ Generates a random printable ASCII character. """
@@ -448,7 +455,9 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
         moveDelay()
         awaitPlayer()
 
-
+################################################################################
+# Map/System                                                                   #
+################################################################################
 
 class ScanResult(Enum):
     """ Represents the result of SCANning a room to find what's inside."""
@@ -660,7 +669,9 @@ def generateMap(requiredItems: Inventory) -> System:
 
     return startingSystem
 
-
+################################################################################
+# Game                                                                         #
+################################################################################
 
 def generateRequiredItems() -> Inventory:
     """ Generates a list of the items that must be gathered to defeat the RANSOMWARE. """
