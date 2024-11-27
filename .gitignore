@@ -1,2 +1,5 @@
+# mypy
+.mypy-cache
+
 # Nix.
 flake.lock

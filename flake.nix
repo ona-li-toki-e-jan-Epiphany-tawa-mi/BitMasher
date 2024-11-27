@@ -30,6 +30,8 @@
         default = with pkgs; mkShell {
           nativeBuildInputs = [
             python3
+
+            mypy
           ];
         };
       });

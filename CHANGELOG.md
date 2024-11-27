@@ -5,6 +5,7 @@
 - Relicensed as GPLv3+.
 - Removed from PyPI.
 - Removed packaging stuff; BitMasher is now a single script.
+- Code cleanup.
 
 # 5.74351224532
 

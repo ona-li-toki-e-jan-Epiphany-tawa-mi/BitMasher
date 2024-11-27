@@ -20,11 +20,29 @@ Dendencies:
 
 - Python 3 - [https://www.python.org](https://www.python.org/)
 
+There is a `flake.nix` you can use with `nix develop path:.` to generate a
+development enviroment.
+
 Then, run one of the following commands to play:
 
 ```
 python3 bitmasher.py
 ./bitmasher.py
+```
+
+## How to test
+
+Dependencies:
+
+- mypy.
+
+There is a `flake.nix` you can use with `nix develop path:.` to generate a
+development enviroment.
+
+Then, run the following command(s):
+
+```sh
+mypy bitmasher.py
 ```
 
 ## Installation

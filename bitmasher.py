@@ -16,21 +16,32 @@
 # You should have received a copy of the GNU General Public License along with
 # BitMasher. If not, see <https://www.gnu.org/licenses/>.
 
+"""BitMasher, a text adventure game where you act as an antivirus attempting to rid
+a computer of a ransomware attack.
 """
-BitMasher, a text adventure game where you act as an antivirus attempting to rid a computer of a
-    ransomware attack.
- ______  __________________ _______  _______  _______           _______  _______
-(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )
-| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|
-| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|
-|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)
-| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (
-| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__
-|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
-"""
+#  ______  __________________ _______  _______  _______           _______  _______
+# (  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )
+# | (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|
+# | (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|
+# |  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)
+# | (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (
+# | )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__
+# |/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 
-## Configuration Section START
-# The time, in seconds, between printing each line that gives the slow scroll effect.
+import os
+import random
+from enum import Enum, auto
+from shutil import get_terminal_size
+from sys import exit, stdout
+from time import sleep, time_ns
+from typing import Dict, Iterable, List, NoReturn, Tuple, Union, cast
+
+################################################################################
+# Configuration                                                                #
+################################################################################
+
+# The time, in seconds, between printing each line that gives the slow scroll
+# effect.
 SLOW_SCROLL_DELAY = 0.11
 
 # The amount of time the player is given per system generated.
@@ -40,11 +51,12 @@ SCAN_TIME = 0.8
 # The chance a SCAN will fail, given as a number between 0 and 1.
 SCAN_FAIL_CHANCE = 0.1
 
-# The number of steps the traverser can take before it gives up. Higher values means it's more likely to generate a room, but
-#   loading times will have the potential to increase.
+# The number of steps the traverser can take before it gives up. Higher values
+# means it's more likely to generate a room, but loading times will have the
+# potential to increase.
 MAX_STEPS = 100
-# The chance that the traverser choses to move to an existing room over finding a new one, given as a
-#   number between 0 and 1. Make larger for spikier maps.
+# The chance that the traverser choses to move to an existing room over finding
+# a new one, given as a number between 0 and 1. Make larger for spikier maps.
 MOVE_CHANCE = 0.7
 
 # The amount of time, in seconds, it takes for a move to happen in the battle.
@@ -55,42 +67,41 @@ FIGHTER_BASE_HEALTH = 50
 CODE_FRAGMENT_HEALTH_BOOST = 25
 # Base damage for all fighters.
 FIGHTER_BASE_DAMAGE = 10
-# The additional damage points the player gets. Must be larger than or equal to 0 for the player to
-#   win whatsoever.
+# The additional damage points the player gets. Must be larger than or equal to
+# 0 for the player to win whatsoever.
 PLAYER_DAMAGE_BOOST = 5
 # The damage boost the RANSOMWARE gets per missing vulnerability.
 VULNERABILITY_DAMAGE_BOOST = 10
-## Configuration Section END
 
-
-
-import os
-import random
-from enum import Enum, auto
-from shutil import get_terminal_size
-from sys import exit, stdout
-from time import sleep, time_ns
-from typing import Dict, Iterable, List, NoReturn, Tuple, Union
+################################################################################
+# IO                                                                           #
+################################################################################
 
 SECONDS_TO_NANOSECONDS = 1_000_000_000
 
-
-
 def centerMessage(message: str) -> str:
-    """ Returns message with the spacing required to appear centered in the terminal. """
+    """ Returns message with the spacing required to appear centered in the
+        terminal. """
     return message.center(get_terminal_size().columns)
 
 def delayedPrint(message: str='', end: str='\n', center: bool=False):
-    """ Used to give a slow-scroll effect akin to old computers like the Commodore 64 and Apple II. """
+    """ Used to give a slow-scroll effect akin to old computers like the
+        Commodore 64 and Apple II. """
     screenWidth = get_terminal_size().columns
     remaining = 0
 
-    # Attempts to split text up line-by-line in the case of strings longer than a line.
+    # Attempts to split text up line-by-line in the case of strings longer than
+    # a line.
     while True:
         sleep(SLOW_SCROLL_DELAY)
         messageChunk = message[remaining:remaining + screenWidth]
-        # Prints flush the buffer since all text needs to appear with each call for the delay effect to work.
-        print(messageChunk if not center else centerMessage(messageChunk), end='', flush=True)
+        # Prints flush the buffer since all text needs to appear with each call
+        # for the delay effect to work.
+        print(
+            messageChunk if not center else centerMessage(messageChunk),
+            end='',
+            flush=True,
+        )
 
         remaining += screenWidth
         if remaining >= len(message):
@@ -100,7 +111,8 @@ def delayedPrint(message: str='', end: str='\n', center: bool=False):
 
 def clearScreen():
     """ Clears the terminal. """
-    # We flush the output buffer before clearing because if there is any residual it could be outputted after the clear.
+    # We flush the output buffer before clearing because if there is any
+    # residual it could be outputted after the clear.
     stdout.flush()
     os.system('cls' if os.name=='nt' else 'clear')
 
@@ -109,12 +121,12 @@ def awaitPlayer(center: bool=False):
     delayedPrint("Press ENTER to contiune", center=center)
     input()
 
-
 class OptionSelector:
-    """ Used to easily create selection menus where users are given a choice among a list of options.
+    """ Used to easily create selection menus where users are given a choice
+        among a list of options.
 
-        Use addOption() to set up the menu, and then use getSelection() to have the user select
-        something. """
+        Use addOption() to set up the menu, and then use getSelection() to have
+        the user select something. """
     options:  List[str]
     messages: List[str]
 
@@ -123,14 +135,18 @@ class OptionSelector:
         self.messages = []
 
     def addOption(self, characterCode: str, message: str):
-        """ Adds a new option. The character code is what the user will type to select that option.
-            Put only a single character, will be made lowercase if possible. Options and messages are
+        """ Adds a new option. The character code is what the user will type to
+            select that option.
+
+            Put only a single character, will be made lowercase if
+            possible. Options and messages are
             displayed in the order they are added."""
         self.options.append(characterCode[0].lower())
         self.messages.append(message)
 
     def addMessage(self, message: str=''):
-        """ Adds a new message. Messages and options are displayed in the order they are added."""
+        """ Adds a new message. Messages and options are displayed in the order
+            they are added."""
         self.messages.append(message)
 
     def dumpOptions(self):
@@ -139,7 +155,8 @@ class OptionSelector:
         self.messages.clear()
 
     def getSelection(self) -> str:
-        """ Prompts the user with the options and has them make a selection and returns it. """
+        """ Prompts the user with the options and has them make a selection and
+            returns it. """
         for message in self.messages:
             delayedPrint(message)
 
@@ -147,7 +164,8 @@ class OptionSelector:
             choice = input()
             sanatizedChoice = choice.strip().lower()
 
-            # If the user entered nothing there's no real reason to throw an error.
+            # If the user entered nothing there's no real reason to throw an
+            # error.
             if not sanatizedChoice:
                 continue
 
@@ -157,11 +175,13 @@ class OptionSelector:
 
             return sanatizedChoice
 
-
+################################################################################
+# Inventory                                                                    #
+################################################################################
 
 class ItemType(Enum):
-    """ Represents the various types of items that can be collected. Also is used to represent the
-        ransomware on the map."""
+    """ Represents the various types of items that can be collected. Also is
+        used to represent the ransomware on the map."""
     FULL_MEMORY_READ_ACCESS  = "Full memory read access"
     FULL_MEMORY_WRITE_ACCESS = "Full memory write access"
     POINTER_DEREFERENCER     = "Pointer dereferencer"
@@ -169,17 +189,14 @@ class ItemType(Enum):
     RANSOMWARE_CODE_FRAGMENT = "RANSOMWARE code fragment"
     VULNERABILITY            = "Vulnerability"
     SANDBOXER                = "Sandboxer"
-    RANSOMWARE               = "The RANSOMWARE" # The RANSOMWARE is stored on the map as an item since
-                                                #   there is not going to be an item in that room
-                                                #   anyways.
     NONE                     = "None"
-
-    def name(self) -> str:
-        """ Returns the name of the item. """
-        return self.value
+    # The RANSOMWARE is stored on the map as an item since there is not going to
+    # be an item in that room anyways.
+    RANSOMWARE = "The RANSOMWARE"
 
 class Inventory:
-    """ Used to represent a set of items along with the amount of each item stored. """
+    """ Used to represent a set of items along with the amount of each item
+        stored. """
     items: Dict[ItemType, int]
 
     def __init__(self):
@@ -193,8 +210,10 @@ class Inventory:
             self.items[item] = count
 
     def tryRemoveItem(self, item: ItemType, count: int=1) -> bool:
-        """ Attempts to remove the given item from the INVENTORY. If the item is not present or the
-            number to remove exceeds the amount stored within, this does nothing and returns false.
+        """ Attempts to remove the given item from the INVENTORY. If the item is
+            not present or the number to remove exceeds the amount stored
+            within, this does nothing and returns false.
+
             If the items were removed, this returns true."""
         if not self.items or self.items[item] < count:
             return False
@@ -211,10 +230,10 @@ class Inventory:
             yield each
 
     def toItemList(self) -> List[ItemType]:
-        """ Takes all of the items and places them in a single list. Multiple items of the same type
-            will be duplicated. """
+        """ Takes all of the items and places them in a single list. Multiple
+            items of the same type will be duplicated. """
         itemList = []
-        for item, count in self:
+        for item, count in self: # type: ignore # False positive about __next__.
             for i in range(0, count):
                 itemList.append(item)
 
@@ -229,7 +248,8 @@ class Inventory:
         return counter
 
     def countItem(self, item: ItemType) -> int:
-        """ Returns amount of the specified item present, returning 0 if it isn't """
+        """ Returns amount of the specified item present, returning 0 if it
+            isn't """
         try:
             return self.items[item]
         except KeyError:
@@ -239,14 +259,17 @@ class Inventory:
         return not self.items
 
     def contains(self, item: ItemType) -> bool:
-        """ Checks if an item is present within the INVENTORY, regardless of count. """
+        """ Checks if an item is present within the INVENTORY, regardless of
+            count. """
         try:
             self.items[item]
             return True
         except KeyError:
             return False
 
-
+################################################################################
+# Battle                                                                       #
+################################################################################
 
 def randomCharacter():
     """ Generates a random printable ASCII character. """
@@ -269,7 +292,10 @@ def annoyingCase(string: str):
     mutableString = list(string)
 
     for i in range(0, len(mutableString)):
-        mutableString[i] = mutableString[i].lower() if random.randint(0, 1) == 1 else mutableString[i].upper()
+        if random.randint(0, 1) == 1:
+            mutableString[i] = mutableString[i].lower()
+        else:
+            mutableString[i] = mutableString[i].upper()
 
     return "".join(mutableString)
 
@@ -303,7 +329,8 @@ def playLoseSequence(funny: bool=False):
     awaitPlayer(center=True)
 
 class Fighter:
-    """ Represents a fighter in a battle, complete with health, damage, and digital bloodlust. """
+    """ Represents a fighter in a battle, complete with health, damage, and
+        digital bloodlust. """
     name:           str
     health:         int
     damage:         int
@@ -314,7 +341,8 @@ class Fighter:
         self.damage         = damage
 
     def attack(self, victim: 'Fighter') -> int:
-        """ Applies self's damage to the victim, reducing their health and returning the damage done. """
+        """ Applies self's damage to the victim, reducing their health and
+            returning the damage done. """
         victim.health -= self.damage
         return self.damage
 
@@ -328,8 +356,9 @@ class Fighter:
 def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
     """ PLAYs out the turn-based fight against the RANSOMWARE. """
     def moveDelay():
-        """ Applies a short delay and prints a newline, which is done before every move in turn-based
-            combat to make it feel more like... combat. """
+        """ Applies a short delay and prints a newline, which is done before
+            every move in turn-based combat to make it feel more like...
+            combat. """
         sleep(BATTLE_MOVE_DELAY)
         delayedPrint()
 
@@ -339,12 +368,18 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
     dereferencer = not requiredItemsLeft.contains(ItemType.POINTER_DEREFERENCER)
     sandboxed = not requiredItemsLeft.contains(ItemType.SANDBOXER)
 
-    player = Fighter("You", FIGHTER_BASE_HEALTH, FIGHTER_BASE_DAMAGE + PLAYER_DAMAGE_BOOST)
-    ransomware = Fighter("The RANSOMWARE"
-                       , FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST *
-            requiredItemsLeft.countItem(ItemType.RANSOMWARE_CODE_FRAGMENT)
-                       , FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST *
-            requiredItemsLeft.countItem(ItemType.VULNERABILITY))
+    player = Fighter(
+        "You",
+        FIGHTER_BASE_HEALTH,
+        FIGHTER_BASE_DAMAGE + PLAYER_DAMAGE_BOOST
+    )
+    ransomware = Fighter(
+        "The RANSOMWARE"
+        , FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST
+          * requiredItemsLeft.countItem(ItemType.RANSOMWARE_CODE_FRAGMENT)
+        , FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST
+          * requiredItemsLeft.countItem(ItemType.VULNERABILITY)
+    )
 
     fightMenu = OptionSelector()
     fightMenu.addOption('x', "E(X)TRACT")
@@ -357,7 +392,10 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
     clearScreen()
     delayedPrint("The RANSOMWARE", center=True)
     delayedPrint()
-    delayedPrint("You have located the RANSOMWARE infecting the computer", center=True)
+    delayedPrint(
+        "You have located the RANSOMWARE infecting the computer",
+        center=True
+    )
     delayedPrint("EXTRACT it from the system as soon as possible", center=True)
     delayedPrint("There is no other option", center=True)
     delayedPrint()
@@ -371,9 +409,11 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
 
         clearScreen()
         delayedPrint("The RANSOMWARE", center=True)
-        if not sandboxed: delayedPrint("Time left: {:.1F} second(s)".format(
-                (loseTime - time_ns()) / SECONDS_TO_NANOSECONDS)
-                                     , center=True)
+        if not sandboxed: delayedPrint(
+                "Time left: {:.1F} second(s)".format(
+                    (loseTime - time_ns()) / SECONDS_TO_NANOSECONDS)
+                , center=True
+        )
         delayedPrint()
         delayedPrint(player.getDisplayableStatus())
         delayedPrint(ransomware.getDisplayableStatus())
@@ -403,7 +443,10 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
                     clearScreen()
                     delayedPrint("Congratulations", center=True)
                     delayedPrint()
-                    delayedPrint("You have successfully EXTRACTed the RANSOMWARE", center=True)
+                    delayedPrint(
+                        "You have successfully EXTRACTed the RANSOMWARE",
+                        center=True
+                    )
                     delayedPrint()
                     awaitPlayer(center=True)
                     break
@@ -419,8 +462,8 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
             damage = player.attack(player)
             delayedPrint("You are an antivirus, you have no means to DANCE")
             moveDelay()
-            delayedPrint("In the process you corrupted your own data, dealing {} dmg ({} hp remaining)"
-                    .format(damage, player.health))
+            delayedPrint("In the process you corrupted your own data, dealing {} dmg ({} hp remaining)".format(
+                damage, player.health))
 
             # Special end if player kills themself.
             if player.isDead():
@@ -438,7 +481,7 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
         moveDelay()
         damage = ransomware.attack(player)
         delayedPrint("You were hit with a viral payload, dealing {} dmg ({} hp remaining)".format(
-                damage, player.health))
+            damage, player.health))
 
         if player.isDead():
             moveDelay()
@@ -448,7 +491,9 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
         moveDelay()
         awaitPlayer()
 
-
+################################################################################
+# Map/System                                                                   #
+################################################################################
 
 class ScanResult(Enum):
     """ Represents the result of SCANning a room to find what's inside."""
@@ -479,17 +524,17 @@ class SystemType(Enum):
     NETWORK_INTERFACES           = "The Network interfaces"
     KERNAL                       = "The Kernal"
     HARD_DRIVE                   = "The Hard drive"
-    WEBSURFER                    = "WebSurfer"                       # Not real.
-    PAINTEREX                    = "PainterEX"                       # Not real.
-    BITMASHER                    = "BitMasher"                       # ;).
-    ILO_LI_SINA_INTERPRETER      = "The ilo li sina Interpreter"     # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/ilo-li-sina
-    FREEWRITER                   = "FreeWriter"                      # Not real.
-    PIMG                         = "PIMG"                            # Not real.
-    ESPRESSO_RUNTIME_ENVIROMENT  = "The Espresso Runtime Enviroment" # Not real.
-    SUPERCAD                     = "SuperCAD"                        # Not real.
-    MACRODOI                     = "MacroDoi"                        # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/MacroDoi
-    CONWAYS_IVORY_TOWER          = "Conway's Ivory Tower"            # https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/Conways-Ivory-Towery"
-    RANDOM_INFORMATION_GENERATOR = "Random-Information-Generator"    # https://github.com/FatherVonTayvious/Random-Information-Generator
+    WEBSURFER                    = "WebSurfer"
+    PAINTEREX                    = "PainterEX"
+    BITMASHER                    = "BitMasher"
+    ILO_LI_SINA_INTERPRETER      = "The ilo li sina Interpreter"
+    FREEWRITER                   = "FreeWriter"
+    PIMG                         = "PIMG"
+    ESPRESSO_RUNTIME_ENVIROMENT  = "The Espresso Runtime Enviroment"
+    SUPERCAD                     = "SuperCAD"
+    MACRODOI                     = "MacroDoi"
+    CONWAYS_IVORY_TOWER          = "Conway's Ivory Tower"
+    RANDOM_INFORMATION_GENERATOR = "Random-Information-Generator"
 
 class System:
     """ Represents a system (room) within the game. """
@@ -521,19 +566,22 @@ class System:
         self.adjacentRooms[direction] = room
 
     def setAdjacent(self, direction: Direction, room: 'System'):
-        """ Sets which system is located in a direction from the current one. Also sets this system's
-            position in the adjacent one. """
+        """ Sets which system is located in a direction from the current
+            one. Also sets this system's position in the adjacent one. """
         self[direction]            = room
         room[direction.opposite()] = self
 
     def __iter__(self) -> Iterable[Tuple[Direction, Union['System', None]]]:
-        """ Allows iterating through the adjacent rooms and the directions they are in. """
+        """ Allows iterating through the adjacent rooms and the directions they
+            are in. """
         for each in self.adjacentRooms.items():
             yield each
 
     def tryScan(self, canFail: bool=True) -> ScanResult:
-        """ Attemps to scan the system. Will overwrite previous result. Has small chance to fail if
-            canFail is left true. The new result is also returned. """
+        """ Attemps to scan the system. Will overwrite previous result. Has
+            small chance to fail if canFail is left true.
+
+            The new result is also returned. """
         scanResult = None
 
         if canFail and random.random() <= SCAN_FAIL_CHANCE:
@@ -549,8 +597,9 @@ class System:
         return scanResult
 
     def tryAppendScanResult(self, message: str) -> str:
-        """ Appends text containing a human-readable scan result to the given message. Used to show
-            the result when printing the current and nearby systems."""
+        """ Appends text containing a human-readable scan result to the given
+            message. Used to show the result when printing the current and
+            nearby systems."""
         if self.scanResult is ScanResult.NONE:
             return message
 
@@ -562,8 +611,6 @@ class System:
 
         return f"{message} (scan: {result})"
 
-
-
 def generateSystemPool() -> List[SystemType]:
     """ Generates the pool of systems that the map generator can pull from. """
     systemPool = list(SystemType)
@@ -571,31 +618,35 @@ def generateSystemPool() -> List[SystemType]:
     return systemPool
 
 def generateMap(requiredItems: Inventory) -> System:
-    """ Generates a new game map with randomly placed systems populated with items and the
-        randsomeware. Returns the starting system. """
+    """ Generates a new game map with randomly placed systems populated with
+        items and the randsomeware. Returns the starting system. """
     startingSystem = System(SystemType.BOOTLOADER)
     itemPool = requiredItems.toItemList()
     systemPool = generateSystemPool()
 
+    # We append the RANSOMWARE after the items have been shuffled as it needs to
+    # be generated last to ensure that there is a path to every item, that it is
+    # not blocked by it.
     random.shuffle(itemPool)
-    itemPool.append(ItemType.RANSOMWARE) # We append the RANSOMWARE after the items have been shuffled as
-                                         #     it needs to be generated last to ensure that there is a
-                                         #     path to every item, that it is not blocked by it.
+    itemPool.append(ItemType.RANSOMWARE)
     random.shuffle(systemPool)
 
     lastItemIndex = None
     itemIndex = 0
     systemIndex = 0
 
-    # All requried items must be generated, but not all rooms, thus we iterate through each item and
-    #   generate a room for it.
+    # All requried items must be generated, but not all rooms, thus we iterate
+    # through each item and generate a room for it.
     while itemIndex < len(itemPool):
-        # If this index meets or exceeds the size of the system pool, i.e. there a more items then
-        #   systems, we need to reduce the amount of items required so we can fit them on the map.
+        # If this index meets or exceeds the size of the system pool, i.e. there
+        # a more items then systems, we need to reduce the amount of items
+        # required so we can fit them on the map.
         if systemIndex >= len(systemPool) - 1:
-            # We only want the first unavalible item index to know which items will have to be removed.
+            # We only want the first unavalible item index to know which items
+            # will have to be removed.
             lastItemIndex = itemIndex
-            # Forces the last system to be used for the RANSOMWARE, which is at the end of the item pool.
+            # Forces the last system to be used for the RANSOMWARE, which is at
+            # the end of the item pool.
             itemIndex = len(itemPool) - 1
 
         traverser = startingSystem
@@ -614,7 +665,7 @@ def generateMap(requiredItems: Inventory) -> System:
                     continue
 
                 nextDirection = random.choice(possibleDirections)
-                traverser = traverser[nextDirection]
+                traverser = cast(System, traverser[nextDirection])
                 previousDirection = nextDirection.opposite()
 
             else:
@@ -624,14 +675,18 @@ def generateMap(requiredItems: Inventory) -> System:
                     stepsLeft += 1
                     continue
 
-                traverser.setAdjacent(random.choice(possibleDirections)
-                                    , System(systemPool[systemIndex], itemPool[itemIndex]))
+                traverser.setAdjacent(
+                    random.choice(possibleDirections),
+                    System(systemPool[systemIndex],
+                           itemPool[itemIndex])
+                )
                 break
 
         # If the traverser was unable to place the item we need to remove it.
         if stepsLeft < 0:
             requiredItems.tryRemoveItem(itemPool[itemIndex])
-            systemIndex -= 1 # We set back the system index so the system can still be used.
+            # We set back the system index so the system can still be used.
+            systemIndex -= 1
 
         itemIndex   += 1
         systemIndex += 1
@@ -640,7 +695,8 @@ def generateMap(requiredItems: Inventory) -> System:
     if lastItemIndex is not None:
         postgenRequiredItemsCount = requiredItems.countItems()
 
-        for i in range(lastItemIndex, len(itemPool) - 1): # No need to remove RANSOMWARE, so -1.
+        # No need to remove RANSOMWARE, so -1.
+        for i in range(lastItemIndex, len(itemPool) - 1):
             requiredItems.tryRemoveItem(itemPool[i])
 
         # Warning for partial map generation.
@@ -649,21 +705,32 @@ def generateMap(requiredItems: Inventory) -> System:
         delayedPrint("Could only place {} items from a pool of {}".format(
                 requiredItems.countItems(), postgenRequiredItemsCount)
                     , center=True)
-        delayedPrint("There are only {} systems avalible in total for generation".format(
-                generateMap.systems)
-                    , center=True)
-        delayedPrint("Please notify the developer(s) so they can fix it", center=True)
+        delayedPrint(
+            "There are only {} systems avalible in total for generation".format(
+                len(systemPool))
+            , center=True
+        )
+        delayedPrint(
+            "Please notify the developer(s) so they can fix it",
+            center=True
+        )
         delayedPrint()
-        delayedPrint("The game should still run fine, so feel free to continue PLAYing", center=True)
+        delayedPrint(
+            "The game should still run fine, so feel free to continue PLAYing",
+            center=True
+        )
         delayedPrint()
         awaitPlayer(center=True)
 
     return startingSystem
 
-
+################################################################################
+# Game                                                                         #
+################################################################################
 
 def generateRequiredItems() -> Inventory:
-    """ Generates a list of the items that must be gathered to defeat the RANSOMWARE. """
+    """ Generates a list of the items that must be gathered to defeat the
+        RANSOMWARE. """
     requiredItems = Inventory()
 
     requiredItems.addItem(ItemType.FULL_MEMORY_READ_ACCESS)
@@ -671,22 +738,28 @@ def generateRequiredItems() -> Inventory:
     requiredItems.addItem(ItemType.POINTER_DEREFERENCER)
     requiredItems.addItem(ItemType.OS_OVERRIDE_CAPABILITY)
     requiredItems.addItem(ItemType.SANDBOXER)
-    requiredItems.addItem(ItemType.RANSOMWARE_CODE_FRAGMENT, count=random.randint(1, 3))
-    requiredItems.addItem(ItemType.VULNERABILITY,            count=random.randint(1, 3))
+    requiredItems.addItem(
+        ItemType.RANSOMWARE_CODE_FRAGMENT,
+        count=random.randint(1, 3)
+    )
+    requiredItems.addItem(
+        ItemType.VULNERABILITY,
+        count=random.randint(1, 3)
+    )
 
     return requiredItems
 
 def displayInventory(inventory: Inventory, requiredItems: Inventory):
-    """ Displays the items the player has and the items that still need to be collected. Will return
-        once they decide to leave the INVENTORY menu. """
+    """ Displays the items the player has and the items that still need to be
+        collected. Will return once they decide to leave the INVENTORY menu. """
     clearScreen()
     delayedPrint("INVENTORY:", center=True)
     delayedPrint()
     if inventory.isEmpty():
         delayedPrint("Empty...", center=True)
     else:
-        for item, count in inventory:
-            delayedPrint(f"- {item.name()}: {count}", center=True)
+        for item, count in inventory: # type: ignore # False positive about __next__.
+            delayedPrint(f"- {item.name}: {count}", center=True)
 
     delayedPrint()
     delayedPrint("Remaining Items:", center=True)
@@ -694,20 +767,21 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
     if requiredItems.isEmpty():
         delayedPrint("Everything needed has been found...", center=True)
     else:
-        for item, count in requiredItems:
-            delayedPrint(f"- {item.name()}: {count}", center=True)
+        for item, count in requiredItems: # type: ignore # False positive about __next__.
+            delayedPrint(f"- {item.name}: {count}", center=True)
 
     delayedPrint()
     awaitPlayer(center=True)
 
 def runGame():
-    """ Initliazes and runs the game, interacting with the player. Returns when the player decides to
-        leave or they fail/complete it. """
+    """ Initliazes and runs the game, interacting with the player. Returns when
+        the player decides to leave or they fail/complete it. """
     requiredItems = generateRequiredItems()
     currentSystem = generateMap(requiredItems)
     gameMenu = OptionSelector()
     inventory = Inventory()
-    loseTime = time_ns() + requiredItems.countItems() * SECONDS_PER_SYSTEM * SECONDS_TO_NANOSECONDS
+    loseTime = time_ns() + requiredItems.countItems() * SECONDS_PER_SYSTEM \
+        * SECONDS_TO_NANOSECONDS
 
     while True:
         currentTime = time_ns()
@@ -717,32 +791,54 @@ def runGame():
 
         if currentSystem.item is ItemType.RANSOMWARE:
             doRansomwareBattle(requiredItems, loseTime)
-            break # Once the battle is over, the player either won or lost, so the game can be ended.
+            # Once the battle is over, the player either won or lost, so the
+            # game can be ended.
+            break
 
         clearScreen()
         currentSystem.tryScan(canFail=False)
-        delayedPrint(currentSystem.tryAppendScanResult(currentSystem.name()), center=True)
-        delayedPrint("Time left: {:.1F} second(s)".format(
+        delayedPrint(
+            currentSystem.tryAppendScanResult(currentSystem.name()),
+            center=True
+        )
+        delayedPrint(
+            "Time left: {:.1F} second(s)".format(
                 (loseTime - currentTime) / SECONDS_TO_NANOSECONDS)
-                   , center=True)
+            , center=True
+        )
         delayedPrint()
 
         gameMenu.dumpOptions()
 
         if currentSystem[Direction.UP] is not None:
-            gameMenu.addOption('u', currentSystem[Direction.UP].tryAppendScanResult(
-                    f"[{currentSystem[Direction.UP].name()}] is (U)P above"))
+            gameMenu.addOption(
+                'u',
+                currentSystem[Direction.UP].tryAppendScanResult(
+                    f"[{currentSystem[Direction.UP].name()}] is (U)P above")
+            )
         if currentSystem[Direction.DOWN] is not None:
-            gameMenu.addOption('d', currentSystem[Direction.DOWN].tryAppendScanResult(
-                    f"[{currentSystem[Direction.DOWN].name()}] is (D)OWN below"))
+            gameMenu.addOption(
+                'd',
+                currentSystem[Direction.DOWN].tryAppendScanResult(
+                    f"[{currentSystem[Direction.DOWN].name()}] is (D)OWN below")
+            )
         if currentSystem[Direction.LEFT] is not None:
-            gameMenu.addOption('l', currentSystem[Direction.LEFT].tryAppendScanResult(
-                    f"[{currentSystem[Direction.LEFT].name()}] is to the (L)EFT"))
+            gameMenu.addOption(
+                'l',
+                currentSystem[Direction.LEFT].tryAppendScanResult(
+                    f"[{currentSystem[Direction.LEFT].name()}] is to the (L)EFT")
+            )
         if currentSystem[Direction.RIGHT] is not None:
-            gameMenu.addOption('r', currentSystem[Direction.RIGHT].tryAppendScanResult(
-                    f"[{currentSystem[Direction.RIGHT].name()}] is to the (R)IGHT"))
+            gameMenu.addOption(
+                'r',
+                currentSystem[Direction.RIGHT].tryAppendScanResult(
+                    f"[{currentSystem[Direction.RIGHT].name()}] is to the (R)IGHT")
+            )
         if currentSystem.item is not ItemType.NONE:
-            gameMenu.addOption('t', f"There is a [{currentSystem.item.name()}]. (T)AKE it?")
+            gameMenu.addOption(
+                't',
+                f"There is a [{currentSystem.item.name()}]. (T)AKE it?"
+            )
 
         gameMenu.addMessage()
         gameMenu.addOption('s', '(S)CAN the neighboring systems')
@@ -782,8 +878,6 @@ def runGame():
         elif choice == 'e':
             return
 
-
-
 def exitGame():
     """ Displays an EXITing message and then EXITs. """
     delayedPrint("EXITing", end='')
@@ -793,18 +887,20 @@ def exitGame():
 
     exit(0)
 
-logo = [" ______  __________________ _______  _______  _______           _______  _______ ",
-        "(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )",
-        "| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|",
-        "| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|",
-        "|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)",
-        "| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   ",
-        "| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__",
-        "|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/"  ]
+logo = [
+    r" ______  __________________ _______  _______  _______           _______  _______ ",
+    r"(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )",
+    r"| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|",
+    r"| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|",
+    r"|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)",
+    r"| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   ",
+    r"| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__",
+    r"|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/"
+]
 
 def startMenu():
-    """ Displays the start menu to the player. Player can EXIT the game from the menu. Returns when
-        the user decides to PLAY."""
+    """ Displays the start menu to the player. Player can EXIT the game from the
+        menu. Returns when the user decides to PLAY."""
     startMenu = OptionSelector()
     startMenu.addOption('p', centerMessage("(P)LAY"))
     startMenu.addOption('i', centerMessage("(I)NSTRUCTIONS"))
@@ -829,20 +925,24 @@ def startMenu():
             clearScreen()
             delayedPrint("INSTRUCTIONS", center=True)
             delayedPrint()
-            delayedPrint("\tYou are an antivirus trying to rid a computer of a RANSOMWARE before it "
-                         "takes over the system. There is a finite amount of time before the system "
-                         "is fully infected")
-            delayedPrint("\tIn order to defeat it, you must find all items before you find the "
-                         "RANSOMWARE. If you do not, you will not be able to EXTRACT it and you will "
-                         "lose.")
-            delayedPrint("\tEach system (room) contains an item, which you can move to; UP, DOWN, LEFT"
-                         ", AND RIGHT. Keep in mind that the map is NOT 2D; Moving RIGHT, UP, LEFT, and"
-                         " DOWN will lead to a different room than the one you started in. The map is "
-                         "'Spiky' so-to-speak.")
-            delayedPrint("\tYou have a SCANner to aid in figuring out which rooms contain items and "
-                         "which have RANSOMWARE. Using the SCANner will reveal what the surronding rooms"
-                         " contain, and the room you are currently in will be automatically SCANned for "
-                         "you. But beware: SCANning takes time. Also, occasionaly a SCAN will fail and "
+            delayedPrint("\tYou are an antivirus trying to rid a computer of a "
+                         "RANSOMWARE before it takes over the system. There is "
+                         "a finite amount of time before the system is fully "
+                         "infected")
+            delayedPrint("\tIn order to defeat it, you must find all items "
+                         "before you find the RANSOMWARE. If you do not, you "
+                         "will not be able to EXTRACT it and you will lose.")
+            delayedPrint("\tEach system (room) contains an item, which you can "
+                         "move to; UP, DOWN, LEFT, AND RIGHT. Keep in mind "
+                         "that the map is NOT 2D; Moving RIGHT, UP, LEFT, and "
+                         "DOWN will lead to a different room than the one you "
+                         "started in. The map is 'Spiky' so-to-speak.")
+            delayedPrint("\tYou have a SCANner to aid in figuring out which "
+                         "rooms contain items and which have RANSOMWARE. Using "
+                         "the SCANner will reveal what the surronding rooms "
+                         "contain, and the room you are currently in will be "
+                         "automatically SCANned for you. But beware: SCANning "
+                         "takes time. Also, occasionaly a SCAN will fail and "
                          "need to be repeated.")
             delayedPrint()
             delayedPrint("Good luck", center=True)
@@ -853,15 +953,19 @@ def startMenu():
             clearScreen()
             delayedPrint("ABOUT", center=True)
             delayedPrint()
-            delayedPrint("\tAs part of one of my classes, I need to create a text-based adventure "
-                         "game where you visit various rooms to gather items. If you get all the "
-                         "items before you meet the boss, you win, else, you lose.")
-            delayedPrint("\tThis class is far too low level for me, but it's still a requirement for "
-                         "the degree. Thus, I have decided to massively overcomplicate said game and "
-                         "make it something somewhat special. I can't stand going through the effort "
-                         "of making something and doing it half-baked.")
-            delayedPrint("\tI came up with the idea by thinking ABOUT what theme I should use, "
-                         "picking the first idea, then adding any features that came to mind.")
+            delayedPrint("\tAs part of one of my classes, I need to create a "
+                         "text-based adventure game where you visit various "
+                         "rooms to gather items. If you get all the items "
+                         "before you meet the boss, you win, else, you lose.")
+            delayedPrint("\tThis class is far too low level for me, but it's "
+                         "still a requirement for the degree. Thus, I have "
+                         "decided to massively overcomplicate said game and "
+                         "make it something somewhat special. I can't stand "
+                         "going through the effort of making something and "
+                         "doing it half-baked.")
+            delayedPrint("\tI came up with the idea by thinking ABOUT what "
+                         "theme I should use, picking the first idea, then "
+                         "adding any features that came to mind.")
             delayedPrint()
             delayedPrint("Anyways, have fun", center=True)
             delayedPrint()
@@ -870,11 +974,10 @@ def startMenu():
         elif choice == 'p':
             return
 
-
-
 def main() -> NoReturn:
-    # When the player EXITs a running game the start menu should come up, but when they EXIT from the
-    #   start menu it closes this program, so we can just use an infinite loop.
+    # When the player EXITs a running game the start menu should come up, but
+    #   when they EXIT from the start menu it closes this program, so we can
+    #   just use an infinite loop.
     while True:
         startMenu()
         runGame()
