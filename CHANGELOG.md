@@ -1,4 +1,10 @@
-# Change Log
+# Changelog
+
+# Upcoming
+
+- Relicensed as GPLv3+.
+
+# 5.74351224532
 
 - "Improved" lose sequence.
 
