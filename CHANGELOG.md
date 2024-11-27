@@ -3,6 +3,7 @@
 # Upcoming
 
 - Relicensed as GPLv3+.
+- Removed from PyPI.
 
 # 5.74351224532
 

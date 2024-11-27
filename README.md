@@ -33,15 +33,7 @@ python3 src/bitmasher_game/TextBasedGame.py
 
 ## Installation
 
-BitMasher is avalible on PyPi
-([https://pypi.org/project/bitmasher-game](https://pypi.org/project/bitmasher-game)),
-and can be installed by running the following command(s):
-
-```console
-pip install bitmasher_game
-```
-
-You can also install it with Nix from the NUR
+You can install BitMasher with Nix from the NUR
 ([https://github.com/nix-community/NUR](https://github.com/nix-community/NUR))
 with the following attribute:
 
