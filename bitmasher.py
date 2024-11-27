@@ -910,9 +910,9 @@ def startMenu():
     while True:
         clearScreen()
         for line in logo:
-            delayedPrint(line, center=True) # Meaningless version number.
+            delayedPrint(line, center=True)
         delayedPrint()
-        delayedPrint("V5.74351224532", center=True) # Meaningless version number.
+        delayedPrint("V6.327438247", center=True) # Meaningless version number.
         delayedPrint()
         delayedPrint("Type and enter the character in brackets to select an option.", center=True)
         delayedPrint()

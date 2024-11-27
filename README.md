@@ -60,7 +60,7 @@ nur.repos.ona-li-toki-e-jan-Epiphany-tawa-mi.bitmasher
 Each option you can select will be shown by a single character in paranthesis.
 Typing that character and hitting ENTER will select that option.
 
-## How to Play
+## How to play
 
 You are an antivirus trying to rid a computer of a RANSOMWARE before it takes
 over the system. There is a finite amount of time before the system is fully
@@ -85,3 +85,10 @@ need to be repeated.
 There is a section at the top of the script containing configuration
 options. All config options bear a description detailing what they modify and
 what values they accept.
+
+## Release notes
+
+- Relicensed as GPLv3+.
+- Removed from PyPI.
+- Removed packaging stuff; BitMasher is now a single script.
+- Code cleanup.

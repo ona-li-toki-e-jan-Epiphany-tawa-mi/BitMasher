@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# 6.327438247
 
 - Relicensed as GPLv3+.
 - Removed from PyPI.
