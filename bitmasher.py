@@ -16,18 +16,17 @@
 # You should have received a copy of the GNU General Public License along with
 # BitMasher. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-BitMasher, a text adventure game where you act as an antivirus attempting to rid
+"""BitMasher, a text adventure game where you act as an antivirus attempting to rid
 a computer of a ransomware attack.
- ______  __________________ _______  _______  _______           _______  _______
-(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )
-| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|
-| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|
-|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)
-| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (
-| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__
-|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 """
+#  ______  __________________ _______  _______  _______           _______  _______
+# (  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )
+# | (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|
+# | (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|
+# |  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)
+# | (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (
+# | )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__
+# |/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/
 
 import os
 import random
@@ -35,7 +34,7 @@ from enum import Enum, auto
 from shutil import get_terminal_size
 from sys import exit, stdout
 from time import sleep, time_ns
-from typing import Dict, Iterable, List, NoReturn, Tuple, Union
+from typing import Dict, Iterable, List, NoReturn, Tuple, Union, cast
 
 ################################################################################
 # Configuration                                                                #
@@ -195,10 +194,6 @@ class ItemType(Enum):
     # be an item in that room anyways.
     RANSOMWARE = "The RANSOMWARE"
 
-    def name(self) -> str:
-        """ Returns the name of the item. """
-        return self.value
-
 class Inventory:
     """ Used to represent a set of items along with the amount of each item
         stored. """
@@ -238,7 +233,7 @@ class Inventory:
         """ Takes all of the items and places them in a single list. Multiple
             items of the same type will be duplicated. """
         itemList = []
-        for item, count in self:
+        for item, count in self: # type: ignore # False positive about __next__.
             for i in range(0, count):
                 itemList.append(item)
 
@@ -670,7 +665,7 @@ def generateMap(requiredItems: Inventory) -> System:
                     continue
 
                 nextDirection = random.choice(possibleDirections)
-                traverser = traverser[nextDirection]
+                traverser = cast(System, traverser[nextDirection])
                 previousDirection = nextDirection.opposite()
 
             else:
@@ -712,7 +707,7 @@ def generateMap(requiredItems: Inventory) -> System:
                     , center=True)
         delayedPrint(
             "There are only {} systems avalible in total for generation".format(
-                generateMap.systems)
+                len(systemPool))
             , center=True
         )
         delayedPrint(
@@ -763,8 +758,8 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
     if inventory.isEmpty():
         delayedPrint("Empty...", center=True)
     else:
-        for item, count in inventory:
-            delayedPrint(f"- {item.name()}: {count}", center=True)
+        for item, count in inventory: # type: ignore # False positive about __next__.
+            delayedPrint(f"- {item.name}: {count}", center=True)
 
     delayedPrint()
     delayedPrint("Remaining Items:", center=True)
@@ -772,8 +767,8 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
     if requiredItems.isEmpty():
         delayedPrint("Everything needed has been found...", center=True)
     else:
-        for item, count in requiredItems:
-            delayedPrint(f"- {item.name()}: {count}", center=True)
+        for item, count in requiredItems: # type: ignore # False positive about __next__.
+            delayedPrint(f"- {item.name}: {count}", center=True)
 
     delayedPrint()
     awaitPlayer(center=True)
@@ -893,14 +888,14 @@ def exitGame():
     exit(0)
 
 logo = [
-    " ______  __________________ _______  _______  _______           _______  _______ ",
-    "(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )",
-    "| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|",
-    "| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|",
-    "|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)",
-    "| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   ",
-    "| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__",
-    "|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/"
+    r" ______  __________________ _______  _______  _______           _______  _______ ",
+    r"(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )",
+    r"| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|",
+    r"| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|",
+    r"|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)",
+    r"| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   ",
+    r"| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__",
+    r"|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/"
 ]
 
 def startMenu():
