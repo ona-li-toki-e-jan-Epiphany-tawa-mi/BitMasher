@@ -327,12 +327,44 @@ static void run_about_menu() {
     await_player(true);
 }
 
+static void run_liscense_menu() {
+    clear_screen();
+
+    delayed_print(true, "LICENSE");
+    delayed_print(false, "\n");
+    delayed_print( true
+                 , "Copyright (C) 2024 ona-li-toki-e-jan-Epiphany-tawa-mi.");
+    delayed_print(false, "\n");
+    delayed_print( true
+                 , "This program is free software: you can redistribute it "
+                   "and/or modify it under the terms of the GNU General Public "
+                   "License as published by the Free Software Foundation, "
+                   "either version 3 of the License, or (at your option) any "
+                   "later version.");
+    delayed_print(false, "\n");
+    delayed_print( true
+                 , "This program is distributed in the hope that it will be "
+                   "useful, but WITHOUT ANY WARRANTY; without even the implied "
+                   "warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR "
+                   "PURPOSE. See the GNU General Public License for more "
+                   "details.");
+    delayed_print(false, "\n");
+    delayed_print( true
+                 , "You should have received a copy of the GNU General Public "
+                   "License along with this program. If not, see "
+                   "http://www.gnu.org/licenses/.");
+    delayed_print(false, "\n");
+
+    await_player(true);
+}
+
 static void run_start_menu() {
     // TODO center messages.
     Selector start_menu = {0};
     selector_add_option(&start_menu, 'p', "(P)LAY");
     selector_add_option(&start_menu, 'i', "(I)NSTRUCTIONS");
     selector_add_option(&start_menu, 'a', "(A)BOUT");
+    selector_add_option(&start_menu, 'l', "(L)ICENSE");
     selector_add_option(&start_menu, 'e', "(E)XIT");
 
     while (true) {
@@ -344,8 +376,8 @@ static void run_start_menu() {
         delayed_print(false, "\n");
         delayed_print(true, version);
         delayed_print(false, "\n");
-        delayed_print(true, "Type and enter the character in brackets to select"
-                            " an option.");
+        delayed_print(true, "Type and enter the character in paranthesis to "
+                            "select an option.");
         delayed_print(false, "\n");
 
         char choice = selector_get_selection(&start_menu);
@@ -353,6 +385,7 @@ static void run_start_menu() {
         case 'p': return;
         case 'i': run_instructions_menu(); break;
         case 'a': run_about_menu();        break;
+        case 'l': run_liscense_menu();     break;
         case 'e': assert(false && "TODO: implement exiting game");
         default:  assert(false && "unreachable");
         }
