@@ -106,23 +106,16 @@ static void sleep_ns(long nanoseconds) {
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Outputs an error and crashes if the given file stream has EOF or an error.
+ * Outputs an error and crashes if the stdin has EOF or an error.
  *
  * @param stream_name - the name of the stream for error messages.
  */
-static void handle_read_error(FILE* stream, const char* stream_name) {
-    assert(NULL != stream);
-    assert(NULL != stream_name);
-
-    if (0 != feof(stream)) {
-        (void)fprintf( stderr
-                     , "ERROR: encountered EOF reading %s\n"
-                     , stream_name);
+static void handle_stdin_error() {
+    if (0 != feof(stdin)) {
+        (void)fprintf(stderr, "ERROR: encountered EOF reading stdin\n");
         exit(1);
-    } else if (0 != ferror(stream)) {
-        (void)fprintf( stderr
-                     , "ERROR: encountered error reading %s\n"
-                     , stream_name);
+    } else if (0 != ferror(stdin)) {
+        (void)fprintf(stderr, "ERROR: encountered error reading stdin\n");
         exit(1);
     }
 }
@@ -231,7 +224,7 @@ static void await_player(bool center) {
 
     while (true) {
         char input = (char)getchar();
-        if (EOF == input) handle_read_error(stdin, "stdin");
+        if (EOF == input) handle_stdin_error();
         if ('\n' == input) break;
     }
 }
@@ -296,7 +289,7 @@ static char selector_get_selection(const Selector* selector) {
     while (true) {
         static char buffer[SELECTOR_GET_SELECTION_BUFFER_SIZE] = {0};
         if (NULL == fgets(buffer, SELECTOR_GET_SELECTION_BUFFER_SIZE, stdin)) {
-            handle_read_error(stdin, "stdin");
+            handle_stdin_error();
         }
 
         char selection = '\0';
