@@ -463,8 +463,12 @@ static void run_start_menu() {
     }
 }
 
-// TODO check if stdout is a tty.
 int main(void) {
+    if (!isatty(STDOUT_FILENO)) {
+        (void)fprintf(stderr, "ERROR: stdout is not a terminal\n");
+        return 1;
+    }
+
     run_start_menu();
     assert(false && "TODO: implement game");
     return 0;
