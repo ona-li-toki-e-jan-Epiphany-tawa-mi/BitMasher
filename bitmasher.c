@@ -28,6 +28,7 @@
  * rid a computer of a ransomware attack.
  */
 
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -51,7 +52,7 @@
 // IO                                                                         //
 ////////////////////////////////////////////////////////////////////////////////
 
-void handle_read_error(FILE* stream, const char* stream_name) {
+static void handle_read_error(FILE* stream, const char* stream_name) {
     assert(NULL != stream);
     assert(NULL != stream_name);
     if (0 != feof(stream)) {
