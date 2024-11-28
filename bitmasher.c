@@ -423,6 +423,21 @@ static void run_liscense_menu() {
     await_player(true);
 }
 
+static void run_exit_sequence() {
+    (void)printf("EXITing");
+    (void)fflush(stdout);
+    sleep_ns(DELAYED_PRINT_DELAY_NS);
+    (void)printf(".");
+    (void)fflush(stdout);
+    sleep_ns(DELAYED_PRINT_DELAY_NS);
+    (void)printf(".");
+    (void)fflush(stdout);
+    sleep_ns(DELAYED_PRINT_DELAY_NS);
+    (void)printf(".\n");
+
+    exit(0);
+}
+
 static void run_start_menu() {
     Selector start_menu = {0};
     selector_add_option(&start_menu, 'p', true, "(P)LAY");
@@ -450,7 +465,7 @@ static void run_start_menu() {
         case 'i': run_instructions_menu(); break;
         case 'a': run_about_menu();        break;
         case 'l': run_liscense_menu();     break;
-        case 'e': assert(false && "TODO: implement exiting game");
+        case 'e': run_exit_sequence();     break;
         default:  assert(false && "unreachable");
         }
     }

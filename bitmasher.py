@@ -776,58 +776,8 @@ def runGame():
         elif choice == 'e':
             return
 
-def exitGame():
-    """ Displays an EXITing message and then EXITs. """
-    delayedPrint("EXITing", end='')
-    delayedPrint(".", end='')
-    delayedPrint(".", end='')
-    delayedPrint(".")
-
-    exit(0)
-
-logo = [
-    r" ______  __________________ _______  _______  _______           _______  _______ ",
-    r"(  ___ \ \__   __/\__   __/(       )(  ___  )(  ____ \|\     /|(  ____ \(  ____ )",
-    r"| (   ) )   ) (      ) (   | () () || (   ) || (    \/| )   ( || (    \/| (    )|",
-    r"| (__/ /    | |      | |   | || || || (___) || (_____ | (___) || (__    | (____)|",
-    r"|  __ (     | |      | |   | |(_)| ||  ___  |(_____  )|  ___  ||  __)   |     __)",
-    r"| (  \ \    | |      | |   | |   | || (   ) |      ) || (   ) || (      | (\ (   ",
-    r"| )___) )___) (___   | |   | )   ( || )   ( |/\____) || )   ( || (____/\| ) \ \__",
-    r"|/ \___/ \_______/   )_(   |/     \||/     \|\_______)|/     \|(_______/|/   \__/"
-]
-
-def startMenu():
-    """ Displays the start menu to the player. Player can EXIT the game from the
-        menu. Returns when the user decides to PLAY."""
-    startMenu = OptionSelector()
-    startMenu.addOption('p', centerMessage("(P)LAY"))
-    startMenu.addOption('i', centerMessage("(I)NSTRUCTIONS"))
-    startMenu.addOption('a', centerMessage("(A)BOUT"))
-    startMenu.addOption('e', centerMessage("(E)XIT"))
-
-    while True:
-        clearScreen()
-        for line in logo:
-            delayedPrint(line, center=True)
-        delayedPrint()
-        delayedPrint("V6.327438247", center=True) # Meaningless version number.
-        delayedPrint()
-        delayedPrint("Type and enter the character in brackets to select an option.", center=True)
-        delayedPrint()
-
-        choice = startMenu.getSelection()
-        if choice == 'e':
-            exitGame()
-
-        elif choice == 'p':
-            return
-
 def main() -> NoReturn:
-    # When the player EXITs a running game the start menu should come up, but
-    #   when they EXIT from the start menu it closes this program, so we can
-    #   just use an infinite loop.
     while True:
-        startMenu()
         runGame()
 
 if __name__ == '__main__':
