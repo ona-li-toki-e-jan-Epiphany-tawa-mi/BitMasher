@@ -115,40 +115,95 @@ static const Terminal* terminal_size() {
     return &terminal;
 }
 
-// TODO make work with multiple lines.
-static void print_centered(const char* message) {
-    assert(NULL != message);
-
-    size_t size = strlen(message);
-    const Terminal* terminal = terminal_size();
-
-    if (size >= terminal->width) {
-        (void)puts(message);
-    } else {
-        size_t remainder     = terminal->width - size;
-        size_t left_padding  = remainder / 2;
-        size_t right_padding = remainder - left_padding;
-
-        for (size_t i = 0; i < left_padding; ++i) putchar(' ');
-        (void)fputs(message, stdout);
-        for (size_t i = 0; i < right_padding; ++i) putchar(' ');
-    }
+static void sleep_ns(long nanoseconds) {
+    struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
+    (void)nanosleep(&time, NULL);
 }
 
-// TODO finish.
-static void delayed_print(bool center, const char* message) {
-    assert(NULL != message);
-    (void)center;
-
-    (void)fflush(stdout);
-    struct timespec time = { .tv_sec  = 0, .tv_nsec = DELAYED_PRINT_DELAY_NS };
-    (void)nanosleep(&time, NULL);
+/**
+ * Do not call this directly. Call delayed_print() instead.
+ *
+ * Prints a string slice in the terminal with a delay.
+ *
+ * @param center - whether to print the slice centered in terminal. Will print
+ * the text without centering if the slice is larger than the width.
+ */
+static void delayed_print_internal( bool center
+                                  , const char* slice
+                                  , size_t length) {
+    assert(NULL != slice);
 
     if (center) {
-        print_centered(message);
+        const Terminal* terminal      = terminal_size();
+        size_t          remainder     = terminal->width - length;
+        size_t          left_padding  = remainder / 2;
+        size_t          right_padding = remainder - left_padding;
+
+        if (length < terminal->width) {
+            for (size_t i = 0; i < left_padding; ++i) (void)putchar(' ');
+        }
+        for (size_t i = 0; i < length; ++i) (void)putchar(slice[i]);
+        if (length < terminal->width) {
+            for (size_t i = 0; i < right_padding; ++i) (void)putchar(' ');
+        }
+
     } else {
-        (void)puts(message);
+        for (size_t i = 0; i < length; ++i) (void)putchar(slice[i]);
+        (void)putchar('\n');
     }
+
+    (void)fflush(stdout);
+    sleep_ns(DELAYED_PRINT_DELAY_NS);
+}
+
+/**
+ * Prints a message line-by-line. Each line is printed with a delay to give an
+ * old computer vibe.
+ *
+ * @param center - whether to print the lines centered in the terminal.
+ */
+static void delayed_print(bool center, const char* message) {
+    assert(NULL != message);
+
+    const Terminal* terminal = terminal_size();
+    const char*     start   = message;
+    const char*     end     = start;
+    size_t          length  = 0;
+
+    while ('\0' != *end) {
+        ++length;
+
+        // If newline, output slice.
+        if ('\n' == *end) {
+            delayed_print_internal(center, start, length - 1);
+            (void)putchar('\n');
+            start  = end + 1;
+            end    = start;
+            length = 0;
+            continue;
+        }
+
+        // If current slice is too bit to be centered, output slice.
+        if (length >= terminal->width) {
+            delayed_print_internal(center, start, length);
+            start  = end + 1;
+            end    = start;
+            length = 0;
+            continue;
+        }
+
+        ++end;
+    }
+
+    // Print leftover slice.
+    if (0 < length) delayed_print_internal(center, start, length);
+}
+
+/**
+ * Prints a newline with a delay to give an old computer vibe.
+ */
+static void delayed_print_newline() {
+    delayed_print(false, "\n");
 }
 
 static void clear_screen() {
@@ -157,14 +212,19 @@ static void clear_screen() {
     fputs("\x1B[2J\x1B[H", stdout);
 }
 
+/**
+ * Waits for the player to press enter, and outputs some text to notify them of
+ * that.
+ * @param center - whether to center the notification to press enter.
+ */
 static void await_player(bool center) {
-    delayed_print(center, "Press ENTER to continue");
+    static const char *const message = "Press ENTER to continue";
+    delayed_print(center, message);
 
     while (true) {
         char input = (char)getchar();
         if (EOF == input) handle_read_error(stdin, "stdin");
-
-        if ('\n' == input) return;
+        if ('\n' == input) break;
     }
 }
 
@@ -228,7 +288,7 @@ static char selector_get_selection(const Selector* selector) {
     while (true) {
         static char buffer[SELECTOR_GET_SELECTION_BUFFER_SIZE] = {0};
         if (NULL == fgets(buffer, SELECTOR_GET_SELECTION_BUFFER_SIZE, stdin)) {
-            handle_read_error(stdin, "stding");
+            handle_read_error(stdin, "stdin");
         }
 
         char selection = '\0';
@@ -279,34 +339,32 @@ static void run_instructions_menu() {
     clear_screen();
 
     delayed_print(true, "INSTRUCTIONS");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "\tYou are an antivirus trying to rid a computer of a "
-                   "RANSOMWARE before it takes over the system. There is a "
-                   "finite amount of time before the system is fully infected");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "\tIn order to defeat it, you must find all items before "
-                   "you find the RANSOMWARE. If you do not, you will not be "
-                   "able to EXTRACT it and you will lose.");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "\tEach system (room) contains an item, which you can move "
-                   "to; UP, DOWN, LEFT, AND RIGHT. Keep in mind that the map "
-                   "is NOT 2D; Moving RIGHT, UP, LEFT, and DOWN will lead to a "
-                   "different room than the one you started in. The map is "
-                   "'Spiky' so-to-speak.");
-    delayed_print(false, "\n");
-    delayed_print(true
-                 , "\tYou have a SCANner to aid in figuring out which rooms "
-                   "contain items and which have RANSOMWARE. Using the SCANner "
-                   "will reveal what the surronding rooms contain, and the "
-                   "room you are currently in will be automatically SCANned "
-                   "for you. But beware: SCANning takes time. Also, "
-                   "occasionaly a SCAN will fail and need to be repeated.");
-    delayed_print(false, "\n");
+    delayed_print_newline();
+    delayed_print(true, "You are an antivirus trying to rid a computer of a "
+                         "RANSOMWARE before it takes over the system. There is "
+                         "a finite amount of time before the system is fully "
+                         "infected");
+    delayed_print_newline();
+    delayed_print(true, "In order to defeat it, you must find all items before "
+                        "you find the RANSOMWARE. If you do not, you will not "
+                        "be able to EXTRACT it and you will lose.");
+    delayed_print_newline();
+    delayed_print(true, "Each system (room) contains an item, which you can "
+                        "move to; UP, DOWN, LEFT, AND RIGHT. Keep in mind that "
+                        "the map is NOT 2D; Moving RIGHT, UP, LEFT, and DOWN "
+                        "will lead to a different room than the one you "
+                        "started in. The map is 'Spiky' so-to-speak.");
+    delayed_print_newline();
+    delayed_print(true, "You have a SCANner to aid in figuring out which rooms "
+                        "contain items and which have RANSOMWARE. Using the "
+                        "SCANner will reveal what the surronding rooms "
+                        "contain, and the room you are currently in will be "
+                        "automatically SCANned for you. But beware: SCANning "
+                        "takes time. Also, occasionaly a SCAN will fail and "
+                        "need to be repeated.");
+    delayed_print_newline();
     delayed_print(true, "Good luck");
-    delayed_print(false, "\n");
+    delayed_print_newline();
 
     await_player(true);
 }
@@ -315,25 +373,23 @@ static void run_about_menu() {
     clear_screen();
 
     delayed_print(true, "ABOUT");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "\tAs part of some garbage that doesn't matter, I needed to "
-                   "create a text-based adventure game where you visit various "
-                   "rooms to gather items. If you get all the items before you "
-                   "meet the boss, you win, else, you lose.");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "\tI had decided to massively overcomplicate said game and "
-                   "make it something somewhat special. I can't stand going "
-                   "through the effort of making something and doing it "
-                   "half-baked.");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "\tOriginally, this was written in Python, but I later "
-                   "decided to rewrite it in C for funsies.");
-    delayed_print(false, "\n");
+    delayed_print_newline();
+    delayed_print(true, "As part of some garbage that doesn't matter, I needed "
+                        "to create a text-based adventure game where you visit "
+                        "various rooms to gather items. If you get all the "
+                        "items before you meet the boss, you win, else, you "
+                        "lose.");
+    delayed_print_newline();
+    delayed_print(true, "I had decided to massively overcomplicate said game "
+                        "and make it something somewhat special. I can't "
+                        "stand going through the effort of making something "
+                        "and doing it half-baked.");
+    delayed_print_newline();
+    delayed_print(true, "Originally, this was written in Python, but I later "
+                        "decided to rewrite it in C for funsies.");
+    delayed_print_newline();
     delayed_print(true, "Anyways, have fun");
-    delayed_print(false, "\n");
+    delayed_print_newline();
 
     await_player(true);
 }
@@ -342,35 +398,31 @@ static void run_liscense_menu() {
     clear_screen();
 
     delayed_print(true, "LICENSE");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "Copyright (C) 2024 ona-li-toki-e-jan-Epiphany-tawa-mi.");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "This program is free software: you can redistribute it "
-                   "and/or modify it under the terms of the GNU General Public "
-                   "License as published by the Free Software Foundation, "
-                   "either version 3 of the License, or (at your option) any "
-                   "later version.");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "This program is distributed in the hope that it will be "
-                   "useful, but WITHOUT ANY WARRANTY; without even the implied "
-                   "warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR "
-                   "PURPOSE. See the GNU General Public License for more "
-                   "details.");
-    delayed_print(false, "\n");
-    delayed_print( true
-                 , "You should have received a copy of the GNU General Public "
-                   "License along with this program. If not, see "
-                   "http://www.gnu.org/licenses/.");
-    delayed_print(false, "\n");
+    delayed_print_newline();
+    delayed_print(true, "Copyright (C) 2024 "
+                        "ona-li-toki-e-jan-Epiphany-tawa-mi.");
+    delayed_print_newline();
+    delayed_print(true, "This program is free software: you can redistribute "
+                        "it and/or modify it under the terms of the GNU "
+                        "General Public License as published by the Free "
+                        "Software Foundation, either version 3 of the License, "
+                        "or (at your option) any later version.");
+    delayed_print_newline();
+    delayed_print(true, "This program is distributed in the hope that it will "
+                        "be useful, but WITHOUT ANY WARRANTY; without even the "
+                        "implied warranty of MERCHANTABILITY or FITNESS FOR A "
+                        "PARTICULAR PURPOSE. See the GNU General Public "
+                        "License for more details.");
+    delayed_print_newline();
+    delayed_print(true, "You should have received a copy of the GNU General "
+                        "Public License along with this program. If not, see "
+                        "http://www.gnu.org/licenses/.");
+    delayed_print_newline();
 
     await_player(true);
 }
 
 static void run_start_menu() {
-    // TODO center messages.
     Selector start_menu = {0};
     selector_add_option(&start_menu, 'p', true, "(P)LAY");
     selector_add_option(&start_menu, 'i', true, "(I)NSTRUCTIONS");
@@ -384,12 +436,12 @@ static void run_start_menu() {
         for (size_t line = 0; line < ARRAY_SIZE(logo); ++line) {
             delayed_print(true, logo[line]);
         }
-        delayed_print(false, "\n");
+        delayed_print_newline();
         delayed_print(true, version);
-        delayed_print(false, "\n");
+        delayed_print_newline();
         delayed_print(true, "Type and enter the character in paranthesis to "
                             "select an option.");
-        delayed_print(false, "\n");
+        delayed_print_newline();
 
         char choice = selector_get_selection(&start_menu);
         switch (choice) {
