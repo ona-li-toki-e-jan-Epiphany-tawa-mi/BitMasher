@@ -381,6 +381,48 @@ static void inventory_add_item(Inventory* inventory, Item item) {
 // Game                                                                       //
 ////////////////////////////////////////////////////////////////////////////////
 
+static Inventory generate_required_items() {
+    Inventory items = {0};
+
+    inventory_add_item(&items, (Item) {
+        .type = ITEM_FULL_MEMORY_READ_ACCESS,
+        .quantity = 1
+    });
+    inventory_add_item(&items, (Item) {
+        .type = ITEM_FULL_MEMORY_WRITE_ACCESS,
+        .quantity = 1
+    });
+    inventory_add_item(&items, (Item) {
+        .type = ITEM_POINTER_DEREFERENCER,
+        .quantity = 1
+    });
+    inventory_add_item(&items, (Item) {
+        .type = ITEM_OS_OVERRIDE_CAPABILITY,
+        .quantity = 1
+    });
+    inventory_add_item(&items, (Item) {
+        .type = ITEM_SANDBOXER,
+        .quantity = 1
+    });
+    inventory_add_item(&items, (Item) {
+        .type = ITEM_RANSOMWARE_CODE_FRAGMENT,
+        .quantity = 1 + (size_t)rand() % 3
+    });
+    inventory_add_item(&items, (Item) {
+        .type = ITEM_VULNERABILITY,
+        .quantity = 1 + (size_t)rand() % 3
+    });
+
+    return items;
+}
+
+static void run_game() {
+    Inventory required_items = generate_required_items();
+
+    (void)printf("Running the game!\n");
+    exit(0);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Main Menu                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
@@ -539,7 +581,14 @@ int main(void) {
         return 1;
     }
 
-    run_start_menu();
-    assert(false && "TODO: implement game");
+    // Seed random number generator.
+    srand((unsigned int)time(NULL));
+
+    // Exits with exit().
+    while (true) {
+        run_start_menu();
+        run_game();
+    }
+
     return 0;
 }
