@@ -227,8 +227,9 @@ static char selector_get_selection(const Selector* selector) {
 
     while (true) {
         static char buffer[SELECTOR_GET_SELECTION_BUFFER_SIZE] = {0};
-        // TODO handle error.
-        (void)fgets(buffer, SELECTOR_GET_SELECTION_BUFFER_SIZE, stdin);
+        if (NULL == fgets(buffer, SELECTOR_GET_SELECTION_BUFFER_SIZE, stdin)) {
+            handle_read_error(stdin, "stding");
+        }
 
         char selection = '\0';
         for (char* c = buffer; '\0' != *c; ++c)
