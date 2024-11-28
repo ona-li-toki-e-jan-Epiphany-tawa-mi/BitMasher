@@ -234,7 +234,6 @@ typedef struct {
     bool        center;
 } SelectorMessage;
 
-// TODO: make case insensitive.
 #define SELECTOR_OPTIONS_MAX_SIZE  25
 #define SELECTOR_MESSAGES_MAX_SIZE 2*SELECTOR_OPTIONS_MAX_SIZE
 typedef struct {
@@ -264,7 +263,7 @@ static void selector_add_option( Selector*   selector
     assert(!isspace(option));
     assert(NULL != description);
 
-    selector->options[selector->options_size++] = option;
+    selector->options[selector->options_size++] = (char)tolower(option);
     selector_add_message(selector, center_description, description);
 }
 
@@ -300,6 +299,7 @@ static char selector_get_selection(const Selector* selector) {
             }
         if ('\0' == selection) continue;
 
+        selection = (char)tolower(selection);
         bool valid_selection = false;
         for (size_t option = 0; option < selector->options_size; ++option)
             if (selection == selector->options[option]) {
