@@ -109,72 +109,6 @@ def delayedPrint(message: str='', end: str='\n', center: bool=False):
 
     print(end=end)
 
-def clearScreen():
-    """ Clears the terminal. """
-    # We flush the output buffer before clearing because if there is any
-    # residual it could be outputted after the clear.
-    stdout.flush()
-    os.system('cls' if os.name=='nt' else 'clear')
-
-def awaitPlayer(center: bool=False):
-    """ Displays a message and waits for the player to chose to continue. """
-    delayedPrint("Press ENTER to contiune", center=center)
-    input()
-
-class OptionSelector:
-    """ Used to easily create selection menus where users are given a choice
-        among a list of options.
-
-        Use addOption() to set up the menu, and then use getSelection() to have
-        the user select something. """
-    options:  List[str]
-    messages: List[str]
-
-    def __init__(self):
-        self.options = []
-        self.messages = []
-
-    def addOption(self, characterCode: str, message: str):
-        """ Adds a new option. The character code is what the user will type to
-            select that option.
-
-            Put only a single character, will be made lowercase if
-            possible. Options and messages are
-            displayed in the order they are added."""
-        self.options.append(characterCode[0].lower())
-        self.messages.append(message)
-
-    def addMessage(self, message: str=''):
-        """ Adds a new message. Messages and options are displayed in the order
-            they are added."""
-        self.messages.append(message)
-
-    def dumpOptions(self):
-        """ Removes all added options and messages. """
-        self.options.clear()
-        self.messages.clear()
-
-    def getSelection(self) -> str:
-        """ Prompts the user with the options and has them make a selection and
-            returns it. """
-        for message in self.messages:
-            delayedPrint(message)
-
-        while True:
-            choice = input()
-            sanatizedChoice = choice.strip().lower()
-
-            # If the user entered nothing there's no real reason to throw an
-            # error.
-            if not sanatizedChoice:
-                continue
-
-            if sanatizedChoice[0] not in self.options:
-                delayedPrint(f"Error: Invalid option '{choice}'!")
-                continue
-
-            return sanatizedChoice
-
 ################################################################################
 # Inventory                                                                    #
 ################################################################################
@@ -920,56 +854,6 @@ def startMenu():
         choice = startMenu.getSelection()
         if choice == 'e':
             exitGame()
-
-        elif choice == 'i':
-            clearScreen()
-            delayedPrint("INSTRUCTIONS", center=True)
-            delayedPrint()
-            delayedPrint("\tYou are an antivirus trying to rid a computer of a "
-                         "RANSOMWARE before it takes over the system. There is "
-                         "a finite amount of time before the system is fully "
-                         "infected")
-            delayedPrint("\tIn order to defeat it, you must find all items "
-                         "before you find the RANSOMWARE. If you do not, you "
-                         "will not be able to EXTRACT it and you will lose.")
-            delayedPrint("\tEach system (room) contains an item, which you can "
-                         "move to; UP, DOWN, LEFT, AND RIGHT. Keep in mind "
-                         "that the map is NOT 2D; Moving RIGHT, UP, LEFT, and "
-                         "DOWN will lead to a different room than the one you "
-                         "started in. The map is 'Spiky' so-to-speak.")
-            delayedPrint("\tYou have a SCANner to aid in figuring out which "
-                         "rooms contain items and which have RANSOMWARE. Using "
-                         "the SCANner will reveal what the surronding rooms "
-                         "contain, and the room you are currently in will be "
-                         "automatically SCANned for you. But beware: SCANning "
-                         "takes time. Also, occasionaly a SCAN will fail and "
-                         "need to be repeated.")
-            delayedPrint()
-            delayedPrint("Good luck", center=True)
-            delayedPrint()
-            awaitPlayer(center=True)
-
-        elif choice == 'a':
-            clearScreen()
-            delayedPrint("ABOUT", center=True)
-            delayedPrint()
-            delayedPrint("\tAs part of one of my classes, I need to create a "
-                         "text-based adventure game where you visit various "
-                         "rooms to gather items. If you get all the items "
-                         "before you meet the boss, you win, else, you lose.")
-            delayedPrint("\tThis class is far too low level for me, but it's "
-                         "still a requirement for the degree. Thus, I have "
-                         "decided to massively overcomplicate said game and "
-                         "make it something somewhat special. I can't stand "
-                         "going through the effort of making something and "
-                         "doing it half-baked.")
-            delayedPrint("\tI came up with the idea by thinking ABOUT what "
-                         "theme I should use, picking the first idea, then "
-                         "adding any features that came to mind.")
-            delayedPrint()
-            delayedPrint("Anyways, have fun", center=True)
-            delayedPrint()
-            awaitPlayer(center=True)
 
         elif choice == 'p':
             return
