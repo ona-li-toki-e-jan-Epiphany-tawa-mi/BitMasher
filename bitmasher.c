@@ -316,6 +316,68 @@ static char selector_get_selection(const Selector* selector) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Items and Inventory                                                        //
+////////////////////////////////////////////////////////////////////////////////
+
+typedef enum {
+    ITEM_FULL_MEMORY_READ_ACCESS = 0,
+    ITEM_FULL_MEMORY_WRITE_ACCESS,
+    ITEM_POINTER_DEREFERENCER,
+    ITEM_OS_OVERRIDE_CAPABILITY,
+    ITEM_RANSOMWARE_CODE_FRAGMENT,
+    ITEM_VULNERABILITY,
+    ITEM_SANDBOXER,
+    ITEM_NONE,
+    // The RANSOMWARE is stored on the map as an item since there is not going
+    // to be an item in that room anyways.
+    ITEM_RANSOMWARE
+} ItemType;
+
+static const char* item_type_name(ItemType type) {
+    switch (type) {
+    case ITEM_FULL_MEMORY_READ_ACCESS:  return "Full memory read access";
+    case ITEM_FULL_MEMORY_WRITE_ACCESS: return "Full memory write access";
+    case ITEM_POINTER_DEREFERENCER:     return "Pointer dereferencer";
+    case ITEM_OS_OVERRIDE_CAPABILITY:   return "OS override capability";
+    case ITEM_RANSOMWARE_CODE_FRAGMENT: return "RANSOMWARE code fragment";
+    case ITEM_VULNERABILITY:            return "Vulnerability";
+    case ITEM_SANDBOXER:                return "Sandboxer";
+    case ITEM_NONE:                     return "None";
+    case ITEM_RANSOMWARE:               return "The RANSOMWARE";
+    default:                            assert(false && "unreachable");
+    }
+}
+
+typedef struct {
+    ItemType type;
+    size_t   quantity;
+} Item;
+
+#define INVENTORY_MAX_SIZE 25
+typedef struct {
+    Item   items[INVENTORY_MAX_SIZE];
+    size_t items_size;
+} Inventory;
+
+static void inventory_add_item(Inventory* inventory, Item item) {
+    assert(NULL != inventory);
+
+    if (ITEM_NONE == item.type) return;
+
+    bool item_exists = false;
+    for (size_t i = 0; i < inventory->items_size; ++i)
+        if (item.type == inventory->items[i].type) {
+            inventory->items[i].quantity += item.quantity;
+            item_exists = true;
+        }
+
+    if (!item_exists) {
+        assert(INVENTORY_MAX_SIZE >= inventory->items_size);
+        inventory->items[inventory->items_size++] = item;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Game                                                                       //
 ////////////////////////////////////////////////////////////////////////////////
 
