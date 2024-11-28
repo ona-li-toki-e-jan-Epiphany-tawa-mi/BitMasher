@@ -43,8 +43,6 @@
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 
-// TODO document functions.
-
 ////////////////////////////////////////////////////////////////////////////////
 // Configuration                                                              //
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,25 +51,8 @@
 #define DELAYED_PRINT_DELAY_NS 110000000
 
 ////////////////////////////////////////////////////////////////////////////////
-// IO                                                                         //
+// Utilities                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
-
-static void handle_read_error(FILE* stream, const char* stream_name) {
-    assert(NULL != stream);
-    assert(NULL != stream_name);
-
-    if (0 != feof(stream)) {
-        (void)fprintf( stderr
-                     , "ERROR: encountered EOF reading %s\n"
-                     , stream_name);
-        exit(1);
-    } else if (0 != ferror(stream)) {
-        (void)fprintf( stderr
-                     , "ERROR: encountered error reading %s\n"
-                     , stream_name);
-        exit(1);
-    }
-}
 
 typedef struct {
     unsigned long width;
@@ -118,6 +99,32 @@ static const Terminal* terminal_size() {
 static void sleep_ns(long nanoseconds) {
     struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
     (void)nanosleep(&time, NULL);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// IO                                                                         //
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Outputs an error and crashes if the given file stream has EOF or an error.
+ *
+ * @param stream_name - the name of the stream for error messages.
+ */
+static void handle_read_error(FILE* stream, const char* stream_name) {
+    assert(NULL != stream);
+    assert(NULL != stream_name);
+
+    if (0 != feof(stream)) {
+        (void)fprintf( stderr
+                     , "ERROR: encountered EOF reading %s\n"
+                     , stream_name);
+        exit(1);
+    } else if (0 != ferror(stream)) {
+        (void)fprintf( stderr
+                     , "ERROR: encountered error reading %s\n"
+                     , stream_name);
+        exit(1);
+    }
 }
 
 /**
@@ -206,7 +213,7 @@ static void delayed_print_newline() {
     delayed_print(false, "\n");
 }
 
-static void clear_screen() {
+static void clear() {
     // \x1B[2J - clears screen.
     // \x1B[H  - returns cursor to home position.
     fputs("\x1B[2J\x1B[H", stdout);
@@ -215,6 +222,7 @@ static void clear_screen() {
 /**
  * Waits for the player to press enter, and outputs some text to notify them of
  * that.
+ *
  * @param center - whether to center the notification to press enter.
  */
 static void await_player(bool center) {
@@ -336,7 +344,7 @@ static const char* logo[] = {
 static const char* version = "V6.327438247";
 
 static void run_instructions_menu() {
-    clear_screen();
+    clear();
 
     delayed_print(true, "INSTRUCTIONS");
     delayed_print_newline();
@@ -370,7 +378,7 @@ static void run_instructions_menu() {
 }
 
 static void run_about_menu() {
-    clear_screen();
+    clear();
 
     delayed_print(true, "ABOUT");
     delayed_print_newline();
@@ -395,7 +403,7 @@ static void run_about_menu() {
 }
 
 static void run_liscense_menu() {
-    clear_screen();
+    clear();
 
     delayed_print(true, "LICENSE");
     delayed_print_newline();
@@ -431,7 +439,7 @@ static void run_start_menu() {
     selector_add_option(&start_menu, 'e', true, "(E)XIT");
 
     while (true) {
-        clear_screen();
+        clear();
 
         for (size_t line = 0; line < ARRAY_SIZE(logo); ++line) {
             delayed_print(true, logo[line]);
@@ -455,6 +463,7 @@ static void run_start_menu() {
     }
 }
 
+// TODO check if stdout is a tty.
 int main(void) {
     run_start_menu();
     assert(false && "TODO: implement game");
