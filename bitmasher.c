@@ -168,26 +168,35 @@ static void await_player(bool center) {
     }
 }
 
+typedef struct {
+    const char* data;
+    bool        center;
+} SelectorMessage;
+
 // TODO: make case insensitive.
 #define SELECTOR_OPTIONS_MAX_SIZE  25
 #define SELECTOR_MESSAGES_MAX_SIZE 2*SELECTOR_OPTIONS_MAX_SIZE
 typedef struct {
-    const char* messages[SELECTOR_MESSAGES_MAX_SIZE];
-    size_t      messages_size;
-    char        options[SELECTOR_OPTIONS_MAX_SIZE];
-    size_t      options_size;
+    SelectorMessage messages[SELECTOR_MESSAGES_MAX_SIZE];
+    size_t          messages_size;
+    char            options[SELECTOR_OPTIONS_MAX_SIZE];
+    size_t          options_size;
 } Selector;
 
-static void selector_add_message(Selector* selector, const char* message) {
+static void selector_add_message( Selector*   selector
+                                , bool        center
+                                , const char* message) {
     assert(NULL != selector);
     assert(selector->messages_size <= SELECTOR_MESSAGES_MAX_SIZE);
     assert(NULL != message);
 
-    selector->messages[selector->messages_size++] = message;
+    SelectorMessage smessage = { .data = message, .center = center };
+    selector->messages[selector->messages_size++] = smessage;
 }
 
-static void selector_add_option( Selector* selector
-                               , char option
+static void selector_add_option( Selector*   selector
+                               , char        option
+                               , bool        center_description
                                , const char* description) {
     assert(NULL != selector);
     assert(selector->options_size <= SELECTOR_OPTIONS_MAX_SIZE);
@@ -195,7 +204,7 @@ static void selector_add_option( Selector* selector
     assert(NULL != description);
 
     selector->options[selector->options_size++] = option;
-    selector_add_message(selector, description);
+    selector_add_message(selector, center_description, description);
 }
 
 static void selector_clear(Selector* selector) {
@@ -211,8 +220,9 @@ static char selector_get_selection(const Selector* selector) {
 
     if (0 == selector->options_size) return '\0';
 
-    for (size_t message = 0; message < selector->messages_size; ++message) {
-        delayed_print(false, selector->messages[message]);
+    for (size_t i = 0; i < selector->messages_size; ++i) {
+        SelectorMessage message = selector->messages[i];
+        delayed_print(message.center, message.data);
     }
 
     while (true) {
@@ -361,11 +371,11 @@ static void run_liscense_menu() {
 static void run_start_menu() {
     // TODO center messages.
     Selector start_menu = {0};
-    selector_add_option(&start_menu, 'p', "(P)LAY");
-    selector_add_option(&start_menu, 'i', "(I)NSTRUCTIONS");
-    selector_add_option(&start_menu, 'a', "(A)BOUT");
-    selector_add_option(&start_menu, 'l', "(L)ICENSE");
-    selector_add_option(&start_menu, 'e', "(E)XIT");
+    selector_add_option(&start_menu, 'p', true, "(P)LAY");
+    selector_add_option(&start_menu, 'i', true, "(I)NSTRUCTIONS");
+    selector_add_option(&start_menu, 'a', true, "(A)BOUT");
+    selector_add_option(&start_menu, 'l', true, "(L)ICENSE");
+    selector_add_option(&start_menu, 'e', true, "(E)XIT");
 
     while (true) {
         clear_screen();
