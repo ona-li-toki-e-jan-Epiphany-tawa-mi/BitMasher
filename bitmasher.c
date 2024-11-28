@@ -29,13 +29,17 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
-#include <stdio.h>
-#include <stdbool.h>
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 // POSIX.
+#include <sys/ioctl.h>
 #include <time.h>
+#include <unistd.h>
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 
@@ -55,6 +59,7 @@
 static void handle_read_error(FILE* stream, const char* stream_name) {
     assert(NULL != stream);
     assert(NULL != stream_name);
+
     if (0 != feof(stream)) {
         (void)fprintf( stderr
                      , "ERROR: encountered EOF reading %s\n"
@@ -68,15 +73,82 @@ static void handle_read_error(FILE* stream, const char* stream_name) {
     }
 }
 
+typedef struct {
+    unsigned long width;
+    unsigned long height;
+} Terminal;
+
+static const Terminal* terminal_size() {
+    static Terminal terminal = {0};
+    static bool dynamic_size = true;
+
+    if (!dynamic_size) return &terminal;
+
+    // Try ioctl().
+    do {
+        struct winsize window_size = {0};
+        if (-1 == ioctl(STDOUT_FILENO, TIOCGWINSZ, &window_size)) break;
+        terminal.width  = window_size.ws_col;
+        terminal.height = window_size.ws_row;
+        return &terminal;
+    } while (false);
+    // Try COLUMNS and LINES environment variables.
+    do {
+        char* end;
+        char* lines = getenv("LINES");
+        if (NULL == lines) break;
+        unsigned long height = strtoul(lines, &end, 10);
+        if ('\0' == *lines || '\0' != *end || ULONG_MAX == height) break;
+        char* columns = getenv("COLUMNS");
+        if (NULL == columns) break;
+        unsigned long width = strtoul(columns, &end, 10);
+        if ('\0' == *columns || '\0' != *end || ULONG_MAX == width) break;
+        terminal.width  = width;
+        terminal.height = height;
+        dynamic_size    = false;
+        return &terminal;
+    } while (false);
+    // Assume size.
+    terminal.width  = 80;
+    terminal.height = 24;
+    dynamic_size    = false;
+    return &terminal;
+}
+
+// TODO make work with multiple lines.
+static void print_centered(const char* message) {
+    assert(NULL != message);
+
+    size_t size = strlen(message);
+    const Terminal* terminal = terminal_size();
+
+    if (size >= terminal->width) {
+        (void)puts(message);
+    } else {
+        size_t remainder     = terminal->width - size;
+        size_t left_padding  = remainder / 2;
+        size_t right_padding = remainder - left_padding;
+
+        for (size_t i = 0; i < left_padding; ++i) putchar(' ');
+        (void)fputs(message, stdout);
+        for (size_t i = 0; i < right_padding; ++i) putchar(' ');
+    }
+}
+
 // TODO finish.
 static void delayed_print(bool center, const char* message) {
     assert(NULL != message);
     (void)center;
 
+    (void)fflush(stdout);
     struct timespec time = { .tv_sec  = 0, .tv_nsec = DELAYED_PRINT_DELAY_NS };
     (void)nanosleep(&time, NULL);
 
-    (void)puts(message);
+    if (center) {
+        print_centered(message);
+    } else {
+        (void)puts(message);
+    }
 }
 
 static void clear_screen() {
@@ -172,6 +244,10 @@ static char selector_get_selection(const Selector* selector) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Game                                                                       //
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
 // Main Menu                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -192,21 +268,24 @@ static void run_instructions_menu() {
     clear_screen();
 
     delayed_print(true, "INSTRUCTIONS");
-    delayed_print(false, "");
+    delayed_print(false, "\n");
     delayed_print( true
                  , "\tYou are an antivirus trying to rid a computer of a "
                    "RANSOMWARE before it takes over the system. There is a "
                    "finite amount of time before the system is fully infected");
+    delayed_print(false, "\n");
     delayed_print( true
                  , "\tIn order to defeat it, you must find all items before "
                    "you find the RANSOMWARE. If you do not, you will not be "
                    "able to EXTRACT it and you will lose.");
+    delayed_print(false, "\n");
     delayed_print( true
                  , "\tEach system (room) contains an item, which you can move "
                    "to; UP, DOWN, LEFT, AND RIGHT. Keep in mind that the map "
                    "is NOT 2D; Moving RIGHT, UP, LEFT, and DOWN will lead to a "
                    "different room than the one you started in. The map is "
                    "'Spiky' so-to-speak.");
+    delayed_print(false, "\n");
     delayed_print(true
                  , "\tYou have a SCANner to aid in figuring out which rooms "
                    "contain items and which have RANSOMWARE. Using the SCANner "
@@ -214,9 +293,9 @@ static void run_instructions_menu() {
                    "room you are currently in will be automatically SCANned "
                    "for you. But beware: SCANning takes time. Also, "
                    "occasionaly a SCAN will fail and need to be repeated.");
-    delayed_print(false, "");
+    delayed_print(false, "\n");
     delayed_print(true, "Good luck");
-    delayed_print(false, "");
+    delayed_print(false, "\n");
 
     await_player(true);
 }
@@ -225,23 +304,25 @@ static void run_about_menu() {
     clear_screen();
 
     delayed_print(true, "ABOUT");
-    delayed_print(false, "");
+    delayed_print(false, "\n");
     delayed_print( true
-                 , "\tAs part of some garbage that doesn't matter, I need to "
+                 , "\tAs part of some garbage that doesn't matter, I needed to "
                    "create a text-based adventure game where you visit various "
                    "rooms to gather items. If you get all the items before you "
                    "meet the boss, you win, else, you lose.");
+    delayed_print(false, "\n");
     delayed_print( true
                  , "\tI had decided to massively overcomplicate said game and "
                    "make it something somewhat special. I can't stand going "
                    "through the effort of making something and doing it "
                    "half-baked.");
+    delayed_print(false, "\n");
     delayed_print( true
                  , "\tOriginally, this was written in Python, but I later "
                    "decided to rewrite it in C for funsies.");
-    delayed_print(false, "");
+    delayed_print(false, "\n");
     delayed_print(true, "Anyways, have fun");
-    delayed_print(false, "");
+    delayed_print(false, "\n");
 
     await_player(true);
 }
@@ -260,12 +341,12 @@ static void run_start_menu() {
         for (size_t line = 0; line < ARRAY_SIZE(logo); ++line) {
             delayed_print(true, logo[line]);
         }
-        delayed_print(false, "");
+        delayed_print(false, "\n");
         delayed_print(true, version);
-        delayed_print(false, "");
+        delayed_print(false, "\n");
         delayed_print(true, "Type and enter the character in brackets to select"
                             " an option.");
-        delayed_print(false, "");
+        delayed_print(false, "\n");
 
         char choice = selector_get_selection(&start_menu);
         switch (choice) {

@@ -74,42 +74,6 @@ PLAYER_DAMAGE_BOOST = 5
 VULNERABILITY_DAMAGE_BOOST = 10
 
 ################################################################################
-# IO                                                                           #
-################################################################################
-
-SECONDS_TO_NANOSECONDS = 1_000_000_000
-
-def centerMessage(message: str) -> str:
-    """ Returns message with the spacing required to appear centered in the
-        terminal. """
-    return message.center(get_terminal_size().columns)
-
-def delayedPrint(message: str='', end: str='\n', center: bool=False):
-    """ Used to give a slow-scroll effect akin to old computers like the
-        Commodore 64 and Apple II. """
-    screenWidth = get_terminal_size().columns
-    remaining = 0
-
-    # Attempts to split text up line-by-line in the case of strings longer than
-    # a line.
-    while True:
-        sleep(SLOW_SCROLL_DELAY)
-        messageChunk = message[remaining:remaining + screenWidth]
-        # Prints flush the buffer since all text needs to appear with each call
-        # for the delay effect to work.
-        print(
-            messageChunk if not center else centerMessage(messageChunk),
-            end='',
-            flush=True,
-        )
-
-        remaining += screenWidth
-        if remaining >= len(message):
-            break
-
-    print(end=end)
-
-################################################################################
 # Inventory                                                                    #
 ################################################################################
 
