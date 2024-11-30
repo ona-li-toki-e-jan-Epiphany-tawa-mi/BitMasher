@@ -41,8 +41,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
-
 ////////////////////////////////////////////////////////////////////////////////
 // Configuration                                                              //
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,6 +52,9 @@
 // Utilities                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
 
+#define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
+
+// Zero-initialized.
 typedef struct {
     unsigned long width;
     unsigned long height;
@@ -229,6 +230,7 @@ static void await_player(bool center) {
     }
 }
 
+// Zero-initialized.
 typedef struct {
     const char* data;
     bool        center;
@@ -236,6 +238,7 @@ typedef struct {
 
 #define SELECTOR_OPTIONS_MAX_SIZE  25
 #define SELECTOR_MESSAGES_MAX_SIZE 2*SELECTOR_OPTIONS_MAX_SIZE
+// Zero-initialized.
 typedef struct {
     SelectorMessage messages[SELECTOR_MESSAGES_MAX_SIZE];
     size_t          messages_size;
@@ -320,14 +323,14 @@ static char selector_get_selection(const Selector* selector) {
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef enum {
-    ITEM_FULL_MEMORY_READ_ACCESS = 0,
+    ITEM_NONE = 0,
+    ITEM_FULL_MEMORY_READ_ACCESS,
     ITEM_FULL_MEMORY_WRITE_ACCESS,
     ITEM_POINTER_DEREFERENCER,
     ITEM_OS_OVERRIDE_CAPABILITY,
     ITEM_RANSOMWARE_CODE_FRAGMENT,
     ITEM_VULNERABILITY,
     ITEM_SANDBOXER,
-    ITEM_NONE,
     // The RANSOMWARE is stored on the map as an item since there is not going
     // to be an item in that room anyways.
     ITEM_RANSOMWARE
@@ -348,15 +351,17 @@ static const char* item_type_name(ItemType type) {
     }
 }
 
+// Zero-initialized.
 typedef struct {
     ItemType type;
     size_t   quantity;
 } Item;
 
-#define INVENTORY_MAX_SIZE 25
+#define INVENTORY_MAX_COUNT 25
+// Zero-initialized.
 typedef struct {
-    Item   items[INVENTORY_MAX_SIZE];
-    size_t items_size;
+    Item   items[INVENTORY_MAX_COUNT];
+    size_t count;
 } Inventory;
 
 static void inventory_add_item(Inventory* inventory, Item item) {
@@ -365,62 +370,357 @@ static void inventory_add_item(Inventory* inventory, Item item) {
     if (ITEM_NONE == item.type) return;
 
     bool item_exists = false;
-    for (size_t i = 0; i < inventory->items_size; ++i)
+    for (size_t i = 0; i < inventory->count; ++i)
         if (item.type == inventory->items[i].type) {
             inventory->items[i].quantity += item.quantity;
             item_exists = true;
         }
 
     if (!item_exists) {
-        assert(INVENTORY_MAX_SIZE >= inventory->items_size);
-        inventory->items[inventory->items_size++] = item;
+        assert(INVENTORY_MAX_COUNT >= inventory->count);
+        inventory->items[inventory->count++] = item;
     }
+}
+
+static void inventory_try_remove_item( Inventory* inventory
+                                     , ItemType type
+                                     , size_t quantity) {
+    assert(NULL != inventory);
+
+    if (ITEM_NONE == type) return;
+
+    for (size_t i = 0; i < inventory->count; ++i) {
+        Item* item = &inventory->items[i];
+        if (type != item->type) continue;
+
+        if (quantity >= item->quantity) {
+            if (i != inventory->count - 1) {
+                *item = inventory->items[inventory->count - 1];
+
+            }
+            --inventory->count;
+
+        } else {
+            item->quantity -= quantity;
+        }
+    }
+}
+
+static void inventory_clear(Inventory* inventory) {
+    assert(NULL != inventory);
+
+    inventory->count = 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Systems                                                                    //
+////////////////////////////////////////////////////////////////////////////////
+
+typedef enum {
+    DIRECTION_UP = 0,
+    DIRECTION_DOWN,
+    DIRECTION_LEFT,
+    DIRECTION_RIGHT,
+    // Quantifier.
+    DIRECTION_COUNT
+} Direction;
+
+static Direction direction_opposite(Direction direction) {
+    switch (direction) {
+    case DIRECTION_UP:    return DIRECTION_DOWN;
+    case DIRECTION_DOWN:  return DIRECTION_UP;
+    case DIRECTION_LEFT:  return DIRECTION_RIGHT;
+    case DIRECTION_RIGHT: return DIRECTION_LEFT;
+    case DIRECTION_COUNT:
+    default: assert(false && "unreachable");
+    }
+}
+
+typedef enum {
+    SYSTEM_REGISTRY = 0,
+    SYSTEM_NETWORK_INTERFACES,
+    SYSTEM_KERNAL,
+    SYSTEM_HARD_DRIVE,
+    SYSTEM_WEBSURFER,
+    SYSTEM_PAINTEREX,
+    SYSTEM_BITMASHER,
+    SYSTEM_ILO_LI_SINA_INTERPRETER,
+    SYSTEM_FREEWRITER,
+    SYSTEM_PIMG,
+    SYSTEM_ESPRESSO_RUNTIME_ENVIROMENT,
+    SYSTEM_SUPERCAD,
+    SYSTEM_MACRODOI,
+    SYSTEM_CONWAYS_IVORY_TOWER,
+    SYSTEM_RANDOM_INFORMATION_GENERATOR,
+    // Quantifier.
+    SYSTEM_TYPE_COUNT,
+    // Inital room. Must be after SYSTEM_TYPE_COUNT so map generator does not
+    // try to generate an extra room for it.
+    SYSTEM_BOOTLOADER
+} SystemType;
+
+static const char* system_type_name(SystemType type) {
+    switch (type) {
+    case SYSTEM_BOOTLOADER:
+        return "The Bootloader";
+    case SYSTEM_REGISTRY:
+        return "The Registry";
+    case SYSTEM_NETWORK_INTERFACES:
+        return "The Network interfaces";
+    case SYSTEM_KERNAL:
+        return "The Kernal";
+    case SYSTEM_HARD_DRIVE:
+        return "The Hard drive";
+    case SYSTEM_WEBSURFER:
+        return "WebSurfer";
+    case SYSTEM_PAINTEREX:
+        return "PainterEX";
+    case SYSTEM_BITMASHER:
+        return "BitMasher";
+    case SYSTEM_ILO_LI_SINA_INTERPRETER:
+        return "The ilo li sina Interpreter";
+    case SYSTEM_FREEWRITER:
+        return "FreeWriter";
+    case SYSTEM_PIMG:
+        return "PIMG";
+    case SYSTEM_ESPRESSO_RUNTIME_ENVIROMENT:
+        return "The Espresso Runtime Enviroment";
+    case SYSTEM_SUPERCAD:
+        return "SuperCAD";
+    case SYSTEM_MACRODOI:
+        return "MacroDoi";
+    case SYSTEM_CONWAYS_IVORY_TOWER:
+        return "Conway's Ivory Tower";
+    case SYSTEM_RANDOM_INFORMATION_GENERATOR:
+        return "Random-Information-Generator";
+    case SYSTEM_TYPE_COUNT:
+    default:
+        assert(false && "unreachable");
+    }
+}
+
+// Zero-initialized.
+// TODO add free function for adjacent systems.
+typedef struct System System;
+struct System {
+    SystemType type;
+    ItemType   item;
+    // Indexed by Direction. NULL means not present.
+    System* adjacent[DIRECTION_COUNT];
+};
+
+////////////////////////////////////////////////////////////////////////////////
+// Map                                                                        //
+////////////////////////////////////////////////////////////////////////////////
+
+// The number of steps the traverser can take before it gives up. Higher values
+// means it's more likely to generate a room, but loading times will have the
+// potential to increase.
+#define MAX_STEPS 100
+// The chance that the traverser choses to move to an existing room over finding
+// a new one, given as a number between 0 and 1. Make larger for spikier maps.
+#define MOVE_CHANCE 70
+
+static System* generate_map(Inventory* items) {
+    assert(NULL != items);
+
+    // Map root node.
+    System* root_node = calloc(1, sizeof(System));
+    if (NULL == root_node) {
+        perror("Unable to allocate memory for map generation");
+        exit(1);
+    }
+
+    // TODO decide if should be memset to 0 or freed or something.
+    root_node->type = SYSTEM_BOOTLOADER;
+    root_node->item = ITEM_NONE;
+
+    Inventory item_pool = *items;
+    // Clear the source items inventory so we can add back only the ones that
+    // were placed on the map.
+    inventory_clear(items);
+    // We append the RANSOMWARE at the end so it is generated last so that there
+    // is a path to every other item.
+    inventory_add_item(&item_pool, (Item) {
+        .type     = ITEM_RANSOMWARE,
+        .quantity = 1
+    });
+
+    SystemType system_pool[SYSTEM_TYPE_COUNT] = {0};
+    for (SystemType type = 0; type < ARRAY_SIZE(system_pool); ++type) {
+        system_pool[type] = type;
+    }
+    // Shuffle systems.
+    // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    for (size_t i = 0; i < ARRAY_SIZE(system_pool); ++i) {
+        size_t j = i + (size_t)rand() % (ARRAY_SIZE(system_pool) - i);
+        SystemType type = system_pool[i];
+        system_pool[i]  = system_pool[j];
+        system_pool[j]  = type;
+    }
+
+    // Statistics.
+    size_t steps_taken       = 0;
+    size_t systems_generated = 0;
+
+    // All requried items must be generated, but not all rooms, thus we iterate
+    // through each item and generate a room for it.
+    size_t next_system_index = 0;
+    while (0 < item_pool.count) {
+        // If this index meets or exceeds the last index in the system pool,
+        // then there are more items then systems, so we need to prioritize
+        // placing the RANSOMWARE.
+        if (next_system_index >= ARRAY_SIZE(system_pool) - 1)
+            while (1 < item_pool.count)
+                for (size_t i = 0; i < item_pool.count; ++i) {
+                    Item item = item_pool.items[i];
+                    if (ITEM_RANSOMWARE != item.type) {
+                        inventory_try_remove_item( &item_pool
+                                                 , item.type
+                                                 , item.quantity);
+                        break;
+                    }
+                }
+
+        bool    placed_item     = false;
+        System* previous_system = NULL;
+        System* traverser       = root_node;
+
+        // Traverse map and a system to it.
+        for (size_t steps_left = MAX_STEPS; 0 < steps_left; --steps_left) {
+            ++steps_taken;
+
+            if (MOVE_CHANCE > rand() % 100) {
+                // Gathers possible systems to move to.
+                System* adjacents[DIRECTION_COUNT] = {0};
+                size_t  adjacents_count            = 0;
+                for ( Direction direction = 0
+                    ; direction < DIRECTION_COUNT
+                    ; ++direction
+                    ) {
+                    System* adjacent = traverser->adjacent[direction];
+                    if (NULL != adjacent && adjacent != previous_system) {
+                        adjacents[adjacents_count++] = adjacent;
+                    }
+                }
+                if (0 == adjacents_count) continue;
+
+                previous_system = traverser;
+                traverser       = adjacents[(size_t)rand() % adjacents_count];
+
+            } else {
+                // Gathers possible directions to add systems to.
+                Direction directions[DIRECTION_COUNT] = {0};
+                size_t    directions_count            = 0;
+                for ( Direction direction = 0
+                    ; direction < DIRECTION_COUNT
+                    ; ++direction
+                    ) {
+                    if (NULL == traverser->adjacent[direction]) {
+                        directions[directions_count++] = direction;
+                    }
+                }
+                if (0 == directions_count) continue;
+
+                System* next_system = calloc(1, sizeof(System));
+                if (NULL == next_system) {
+                    perror("Unable to allocate memory for map generation");
+                    exit(1);
+                }
+
+                next_system->type = system_pool[next_system_index];
+                next_system->item = item_pool.items[0].type;
+
+                Direction direction
+                    = directions[(size_t)rand() % directions_count];
+                traverser->adjacent[direction] = next_system;
+                next_system->adjacent[direction_opposite(direction)]
+                    = traverser;
+                placed_item = true;
+
+                ++systems_generated;
+                break;
+            }
+        }
+
+        // Mark item as present.
+        if (ITEM_RANSOMWARE != item_pool.items[0].type) {
+            inventory_add_item(items, (Item) {
+                .type     = item_pool.items[0].type,
+                .quantity = 1
+            });
+        }
+        // Consume item.
+        inventory_try_remove_item( &item_pool
+                                 , item_pool.items[0].type
+                                 , 1);
+        // If we couldn't place the item, we still might be able to use the
+        // system for the next one.
+        if (placed_item) ++next_system_index;
+    }
+
+    // TODO consider throwing error when not all items are generated.
+
+    (void)fprintf(stderr, "MAP GENERATOR STATISTICS\n");
+    (void)fprintf(stderr, "Total traverser steps: %zu\n", steps_taken);
+    (void)fprintf(stderr, "Systems generated: %zu\n", systems_generated);
+
+    return root_node;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Game                                                                       //
 ////////////////////////////////////////////////////////////////////////////////
 
-static Inventory generate_required_items() {
-    Inventory items = {0};
+static void generate_required_items(Inventory* inventory) {
+    assert(NULL != inventory);
 
-    inventory_add_item(&items, (Item) {
+    inventory_add_item(inventory, (Item) {
         .type = ITEM_FULL_MEMORY_READ_ACCESS,
         .quantity = 1
     });
-    inventory_add_item(&items, (Item) {
+    inventory_add_item(inventory, (Item) {
         .type = ITEM_FULL_MEMORY_WRITE_ACCESS,
         .quantity = 1
     });
-    inventory_add_item(&items, (Item) {
+    inventory_add_item(inventory, (Item) {
         .type = ITEM_POINTER_DEREFERENCER,
         .quantity = 1
     });
-    inventory_add_item(&items, (Item) {
+    inventory_add_item(inventory, (Item) {
         .type = ITEM_OS_OVERRIDE_CAPABILITY,
         .quantity = 1
     });
-    inventory_add_item(&items, (Item) {
+    inventory_add_item(inventory, (Item) {
         .type = ITEM_SANDBOXER,
         .quantity = 1
     });
-    inventory_add_item(&items, (Item) {
+    inventory_add_item(inventory, (Item) {
         .type = ITEM_RANSOMWARE_CODE_FRAGMENT,
         .quantity = 1 + (size_t)rand() % 3
     });
-    inventory_add_item(&items, (Item) {
+    inventory_add_item(inventory, (Item) {
         .type = ITEM_VULNERABILITY,
         .quantity = 1 + (size_t)rand() % 3
     });
 
-    return items;
+    // Shuffle items.
+    // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    for (size_t i = 0; i < inventory->count; ++i) {
+        size_t j = i + (size_t)rand() % (inventory->count - i);
+        Item item           = inventory->items[i];
+        inventory->items[i] = inventory->items[j];
+        inventory->items[j] = item;
+    }
 }
 
 static void run_game() {
-    Inventory required_items = generate_required_items();
+    Inventory required_items = {0};
+    generate_required_items(&required_items);
+    System* map = generate_map(&required_items);
 
     (void)printf("Running the game!\n");
-    exit(0);
+    assert(false && "TODO");
 }
 
 ////////////////////////////////////////////////////////////////////////////////

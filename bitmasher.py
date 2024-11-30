@@ -40,24 +40,12 @@ from typing import Dict, Iterable, List, NoReturn, Tuple, Union, cast
 # Configuration                                                                #
 ################################################################################
 
-# The time, in seconds, between printing each line that gives the slow scroll
-# effect.
-SLOW_SCROLL_DELAY = 0.11
-
 # The amount of time the player is given per system generated.
 SECONDS_PER_SYSTEM = 8
 # The time, in seconds, it takes to SCAN the surrounding systems.
 SCAN_TIME = 0.8
 # The chance a SCAN will fail, given as a number between 0 and 1.
 SCAN_FAIL_CHANCE = 0.1
-
-# The number of steps the traverser can take before it gives up. Higher values
-# means it's more likely to generate a room, but loading times will have the
-# potential to increase.
-MAX_STEPS = 100
-# The chance that the traverser choses to move to an existing room over finding
-# a new one, given as a number between 0 and 1. Make larger for spikier maps.
-MOVE_CHANCE = 0.7
 
 # The amount of time, in seconds, it takes for a move to happen in the battle.
 BATTLE_MOVE_DELAY = 0.7
@@ -77,50 +65,10 @@ VULNERABILITY_DAMAGE_BOOST = 10
 # Inventory                                                                    #
 ################################################################################
 
-class ItemType(Enum):
-    """ Represents the various types of items that can be collected. Also is
-        used to represent the ransomware on the map."""
-    FULL_MEMORY_READ_ACCESS  = "Full memory read access"
-    FULL_MEMORY_WRITE_ACCESS = "Full memory write access"
-    POINTER_DEREFERENCER     = "Pointer dereferencer"
-    OS_OVERRIDE_CAPABILITY   = "OS override capability"
-    RANSOMWARE_CODE_FRAGMENT = "RANSOMWARE code fragment"
-    VULNERABILITY            = "Vulnerability"
-    SANDBOXER                = "Sandboxer"
-    NONE                     = "None"
-    # The RANSOMWARE is stored on the map as an item since there is not going to
-    # be an item in that room anyways.
-    RANSOMWARE = "The RANSOMWARE"
-
 class Inventory:
     """ Used to represent a set of items along with the amount of each item
         stored. """
     items: Dict[ItemType, int]
-
-    def __init__(self):
-        self.items = {}
-
-    def addItem(self, item: ItemType, count: int=1):
-        """ Adds the given item to the INVENTORY. """
-        try:
-            self.items[item] += count
-        except KeyError:
-            self.items[item] = count
-
-    def tryRemoveItem(self, item: ItemType, count: int=1) -> bool:
-        """ Attempts to remove the given item from the INVENTORY. If the item is
-            not present or the number to remove exceeds the amount stored
-            within, this does nothing and returns false.
-
-            If the items were removed, this returns true."""
-        if not self.items or self.items[item] < count:
-            return False
-
-        self.items[item] -= count
-        if self.items[item] == 0:
-            del self.items[item]
-
-        return True
 
     def __iter__(self) -> Iterable[Tuple[ItemType, int]]:
         """ Allows iterating through the items and their counts. """
@@ -401,55 +349,9 @@ class ScanResult(Enum):
     ERROR     = auto()
     NONE      = auto()
 
-class Direction(Enum):
-    """ Represents a physical direction in which to travel. """
-    UP    = auto()
-    DOWN  = auto()
-    LEFT  = auto()
-    RIGHT = auto()
-
-    def opposite(self) -> 'Direction':
-        """ Returns the direction opposite to the current one. """
-        if   self is Direction.UP:   return Direction.DOWN
-        elif self is Direction.DOWN: return Direction.UP
-        elif self is Direction.LEFT: return Direction.RIGHT
-        else:                        return Direction.LEFT
-
-class SystemType(Enum):
-    """ Represents the various systems that can be visited. """
-    BOOTLOADER                   = "The Bootloader"
-    REGISTRY                     = "The Registry"
-    NETWORK_INTERFACES           = "The Network interfaces"
-    KERNAL                       = "The Kernal"
-    HARD_DRIVE                   = "The Hard drive"
-    WEBSURFER                    = "WebSurfer"
-    PAINTEREX                    = "PainterEX"
-    BITMASHER                    = "BitMasher"
-    ILO_LI_SINA_INTERPRETER      = "The ilo li sina Interpreter"
-    FREEWRITER                   = "FreeWriter"
-    PIMG                         = "PIMG"
-    ESPRESSO_RUNTIME_ENVIROMENT  = "The Espresso Runtime Enviroment"
-    SUPERCAD                     = "SuperCAD"
-    MACRODOI                     = "MacroDoi"
-    CONWAYS_IVORY_TOWER          = "Conway's Ivory Tower"
-    RANDOM_INFORMATION_GENERATOR = "Random-Information-Generator"
-
 class System:
     """ Represents a system (room) within the game. """
-    type:          SystemType
-    item:          ItemType
     scanResult:    ScanResult
-    adjacentRooms: Dict[Direction, Union['System', None]]
-
-    def __init__(self, type: SystemType, item: ItemType=ItemType.NONE):
-        self.type       = type
-        self.item       = item
-        self.scanResult = ScanResult.NONE
-
-        self.adjacentRooms = { Direction.UP:    None,
-                               Direction.DOWN:  None,
-                               Direction.LEFT:  None,
-                               Direction.RIGHT: None  }
 
     def name(self) -> str:
         """ Returns the name of the system. """
@@ -509,85 +411,12 @@ class System:
 
         return f"{message} (scan: {result})"
 
-def generateSystemPool() -> List[SystemType]:
-    """ Generates the pool of systems that the map generator can pull from. """
-    systemPool = list(SystemType)
-    systemPool.remove(SystemType.BOOTLOADER)
-    return systemPool
-
 def generateMap(requiredItems: Inventory) -> System:
     """ Generates a new game map with randomly placed systems populated with
         items and the randsomeware. Returns the starting system. """
-    startingSystem = System(SystemType.BOOTLOADER)
-    itemPool = requiredItems.toItemList()
-    systemPool = generateSystemPool()
-
-    # We append the RANSOMWARE after the items have been shuffled as it needs to
-    # be generated last to ensure that there is a path to every item, that it is
-    # not blocked by it.
-    random.shuffle(itemPool)
-    itemPool.append(ItemType.RANSOMWARE)
-    random.shuffle(systemPool)
-
     lastItemIndex = None
     itemIndex = 0
     systemIndex = 0
-
-    # All requried items must be generated, but not all rooms, thus we iterate
-    # through each item and generate a room for it.
-    while itemIndex < len(itemPool):
-        # If this index meets or exceeds the size of the system pool, i.e. there
-        # a more items then systems, we need to reduce the amount of items
-        # required so we can fit them on the map.
-        if systemIndex >= len(systemPool) - 1:
-            # We only want the first unavalible item index to know which items
-            # will have to be removed.
-            lastItemIndex = itemIndex
-            # Forces the last system to be used for the RANSOMWARE, which is at
-            # the end of the item pool.
-            itemIndex = len(itemPool) - 1
-
-        traverser = startingSystem
-        previousDirection = None
-        stepsLeft = MAX_STEPS
-
-        while stepsLeft >= 0:
-            stepsLeft -= 1
-
-            if random.random() < MOVE_CHANCE:
-                possibleDirections = [direction for direction in list(Direction)
-                                      if traverser[direction] is not None and
-                                         direction is not previousDirection]
-                if not possibleDirections:
-                    stepsLeft += 1
-                    continue
-
-                nextDirection = random.choice(possibleDirections)
-                traverser = cast(System, traverser[nextDirection])
-                previousDirection = nextDirection.opposite()
-
-            else:
-                possibleDirections = [direction for direction in list(Direction)
-                                      if traverser[direction] is None]
-                if not possibleDirections:
-                    stepsLeft += 1
-                    continue
-
-                traverser.setAdjacent(
-                    random.choice(possibleDirections),
-                    System(systemPool[systemIndex],
-                           itemPool[itemIndex])
-                )
-                break
-
-        # If the traverser was unable to place the item we need to remove it.
-        if stepsLeft < 0:
-            requiredItems.tryRemoveItem(itemPool[itemIndex])
-            # We set back the system index so the system can still be used.
-            systemIndex -= 1
-
-        itemIndex   += 1
-        systemIndex += 1
 
     # Removes required items that a room could not be made avalible for.
     if lastItemIndex is not None:
@@ -626,27 +455,6 @@ def generateMap(requiredItems: Inventory) -> System:
 # Game                                                                         #
 ################################################################################
 
-def generateRequiredItems() -> Inventory:
-    """ Generates a list of the items that must be gathered to defeat the
-        RANSOMWARE. """
-    requiredItems = Inventory()
-
-    requiredItems.addItem(ItemType.FULL_MEMORY_READ_ACCESS)
-    requiredItems.addItem(ItemType.FULL_MEMORY_WRITE_ACCESS)
-    requiredItems.addItem(ItemType.POINTER_DEREFERENCER)
-    requiredItems.addItem(ItemType.OS_OVERRIDE_CAPABILITY)
-    requiredItems.addItem(ItemType.SANDBOXER)
-    requiredItems.addItem(
-        ItemType.RANSOMWARE_CODE_FRAGMENT,
-        count=random.randint(1, 3)
-    )
-    requiredItems.addItem(
-        ItemType.VULNERABILITY,
-        count=random.randint(1, 3)
-    )
-
-    return requiredItems
-
 def displayInventory(inventory: Inventory, requiredItems: Inventory):
     """ Displays the items the player has and the items that still need to be
         collected. Will return once they decide to leave the INVENTORY menu. """
@@ -674,7 +482,6 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
 def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when
         the player decides to leave or they fail/complete it. """
-    requiredItems = generateRequiredItems()
     currentSystem = generateMap(requiredItems)
     gameMenu = OptionSelector()
     inventory = Inventory()
