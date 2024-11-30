@@ -250,7 +250,7 @@ static void selector_add_message( Selector*   selector
                                 , bool        center
                                 , const char* message) {
     assert(NULL != selector);
-    assert(selector->messages_size <= SELECTOR_MESSAGES_MAX_SIZE);
+    assert(SELECTOR_MESSAGES_MAX_SIZE > selector->messages_size );
     assert(NULL != message);
 
     SelectorMessage smessage = { .data = message, .center = center };
@@ -262,7 +262,7 @@ static void selector_add_option( Selector*   selector
                                , bool        center_description
                                , const char* description) {
     assert(NULL != selector);
-    assert(selector->options_size <= SELECTOR_OPTIONS_MAX_SIZE);
+    assert(SELECTOR_OPTIONS_MAX_SIZE > selector->options_size);
     assert(!isspace(option));
     assert(NULL != description);
 
@@ -377,7 +377,7 @@ static void inventory_add_item(Inventory* inventory, Item item) {
         }
 
     if (!item_exists) {
-        assert(INVENTORY_MAX_COUNT >= inventory->count);
+        assert(INVENTORY_MAX_COUNT > inventory->count);
         inventory->items[inventory->count++] = item;
     }
 }
