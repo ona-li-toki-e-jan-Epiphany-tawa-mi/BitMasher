@@ -513,6 +513,21 @@ struct System {
 // Map                                                                        //
 ////////////////////////////////////////////////////////////////////////////////
 
+#define MAP_MAX_COUNT 50
+// Zero-initialized.
+typedef struct {
+    // First system is the root node of the map.
+    System systems[MAP_MAX_COUNT];
+    size_t count;
+} Map;
+
+static System* map_alloc_system(Map* map) {
+    assert(NULL != map);
+    assert(MAP_MAX_COUNT > map->count);
+
+    return &map->systems[map->count++];
+}
+
 // The number of steps the traverser can take before it gives up. Higher values
 // means it's more likely to generate a room, but loading times will have the
 // potential to increase.
@@ -521,19 +536,19 @@ struct System {
 // a new one, given as a number between 0 and 1. Make larger for spikier maps.
 #define MOVE_CHANCE 70
 
-static System* generate_map(Inventory* items) {
+static Map* generate_map(Inventory* items) {
     assert(NULL != items);
 
-    // Map root node.
-    System* root_node = calloc(1, sizeof(System));
-    if (NULL == root_node) {
+    Map* map = calloc(1, sizeof(Map));
+    if (NULL == map) {
         perror("Unable to allocate memory for map generation");
         exit(1);
     }
 
-    // TODO decide if should be memset to 0 or freed or something.
-    root_node->type = SYSTEM_BOOTLOADER;
-    root_node->item = ITEM_NONE;
+    // Map root node.
+    System* root_node = map_alloc_system(map);
+    root_node->type   = SYSTEM_BOOTLOADER;
+    root_node->item   = ITEM_NONE;
 
     Inventory item_pool = *items;
     // Clear the source items inventory so we can add back only the ones that
@@ -622,14 +637,9 @@ static System* generate_map(Inventory* items) {
                 }
                 if (0 == directions_count) continue;
 
-                System* next_system = calloc(1, sizeof(System));
-                if (NULL == next_system) {
-                    perror("Unable to allocate memory for map generation");
-                    exit(1);
-                }
-
-                next_system->type = system_pool[next_system_index];
-                next_system->item = item_pool.items[0].type;
+                System* next_system = map_alloc_system(map);
+                next_system->type   = system_pool[next_system_index];
+                next_system->item   = item_pool.items[0].type;
 
                 Direction direction
                     = directions[(size_t)rand() % directions_count];
@@ -665,7 +675,7 @@ static System* generate_map(Inventory* items) {
     (void)fprintf(stderr, "Total traverser steps: %zu\n", steps_taken);
     (void)fprintf(stderr, "Systems generated: %zu\n", systems_generated);
 
-    return root_node;
+    return map;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -717,10 +727,12 @@ static void generate_required_items(Inventory* inventory) {
 static void run_game() {
     Inventory required_items = {0};
     generate_required_items(&required_items);
-    System* map = generate_map(&required_items);
+    Map* map = generate_map(&required_items);
 
     (void)printf("Running the game!\n");
     assert(false && "TODO");
+
+    free(map);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
