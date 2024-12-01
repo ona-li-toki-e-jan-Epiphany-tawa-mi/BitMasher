@@ -40,8 +40,6 @@ from typing import Dict, Iterable, List, NoReturn, Tuple, Union, cast
 # Configuration                                                                #
 ################################################################################
 
-# The amount of time the player is given per system generated.
-SECONDS_PER_SYSTEM = 8
 # The time, in seconds, it takes to SCAN the surrounding systems.
 SCAN_TIME = 0.8
 # The chance a SCAN will fail, given as a number between 0 and 1.
@@ -411,28 +409,9 @@ class System:
 
         return f"{message} (scan: {result})"
 
-def generateMap(requiredItems: Inventory) -> System:
-    """ Generates a new game map with randomly placed systems populated with
-        items and the randsomeware. Returns the starting system. """
-    lastItemIndex = None
-    itemIndex = 0
-    systemIndex = 0
-
-    # Removes required items that a room could not be made avalible for.
-    if lastItemIndex is not None:
-        postgenRequiredItemsCount = requiredItems.countItems()
-
-        # No need to remove RANSOMWARE, so -1.
-        for i in range(lastItemIndex, len(itemPool) - 1):
-            requiredItems.tryRemoveItem(itemPool[i])
-
-
-
-    return startingSystem
-
 ################################################################################
 # Game                                                                         #
-################################################################################
+##################################################...##############################
 
 def displayInventory(inventory: Inventory, requiredItems: Inventory):
     """ Displays the items the player has and the items that still need to be
@@ -461,12 +440,6 @@ def displayInventory(inventory: Inventory, requiredItems: Inventory):
 def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when
         the player decides to leave or they fail/complete it. """
-    currentSystem = generateMap(requiredItems)
-    gameMenu = OptionSelector()
-    inventory = Inventory()
-    loseTime = time_ns() + requiredItems.countItems() * SECONDS_PER_SYSTEM \
-        * SECONDS_TO_NANOSECONDS
-
     while True:
         currentTime = time_ns()
         if currentTime >= loseTime:

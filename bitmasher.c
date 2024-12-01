@@ -47,8 +47,19 @@
 // Configuration                                                              //
 ////////////////////////////////////////////////////////////////////////////////
 
+// The amount of time the player is given per system generated.
+#define SECONDS_PER_SYSTEM 8
+
 // The time each line printed with delayed_print() waits for in nanoseconds.
 #define DELAYED_PRINT_DELAY_NS 110000000
+
+// The number of steps the traverser can take before it gives up. Higher values
+// means it's more likely to generate a room, but loading times will have the
+// potential to increase.
+#define MAX_STEPS 100
+// The chance that the traverser choses to move to an existing room over finding
+// a new one, given as a number between 0 and 1. Make larger for spikier maps.
+#define MOVE_CHANCE 70
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities                                                                  //
@@ -99,9 +110,24 @@ static const Terminal* terminal_size() {
     return &terminal;
 }
 
+/**
+ * Sleeps for the specified number of nanoseconds.
+ * @param nanoseconds - must be 0 <= nanoseconds < 1,000,000,000.
+ */
 static void sleep_ns(long nanoseconds) {
+    assert(1000000000 > nanoseconds);
     struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
     (void)nanosleep(&time, NULL);
+}
+
+static long get_time_s() {
+    struct timespec tp;
+    if (-1 == clock_gettime(CLOCK_MONOTONIC, &tp)) {
+        perror("Failed to read from monotonic clock");
+        exit(1);
+    }
+
+    return tp.tv_sec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -549,14 +575,6 @@ static System* map_alloc_system(Map* map) {
     return &map->systems[map->count++];
 }
 
-// The number of steps the traverser can take before it gives up. Higher values
-// means it's more likely to generate a room, but loading times will have the
-// potential to increase.
-#define MAX_STEPS 100
-// The chance that the traverser choses to move to an existing room over finding
-// a new one, given as a number between 0 and 1. Make larger for spikier maps.
-#define MOVE_CHANCE 70
-
 static Map* generate_map(Inventory* items) {
     assert(NULL != items);
 
@@ -763,8 +781,26 @@ static void run_game() {
     generate_required_items(&required_items);
     Map* map = generate_map(&required_items);
 
-    (void)printf("Running the game!\n");
-    assert(false && "TODO");
+    long lose_time = get_time_s() + (long)required_items.count
+        * SECONDS_PER_SYSTEM;
+
+    Selector game_menu = {0};
+
+    while (true) {
+        long current_time = get_time_s();
+        // TODO check time.
+
+        // TODO handle ransomware.
+
+        clear();
+        // TODO: scan room.
+        delayed_print(true, "Time left: %ld second(s)"
+                          , lose_time - current_time);
+
+        selector_clear(&game_menu);
+
+        // TODO rest
+    }
 
     free(map);
 }
