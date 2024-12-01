@@ -51,7 +51,7 @@
 #define SECONDS_PER_SYSTEM 8
 
 // The time each line printed with delayed_print() waits for in nanoseconds.
-#define DELAYED_PRINT_DELAY_NS 110000000
+#define DELAYED_PRINT_DELAY_NS 110000000L
 
 // The number of steps the traverser can take before it gives up. Higher values
 // means it's more likely to generate a room, but loading times will have the
@@ -159,7 +159,8 @@ static void handle_stdin_error() {
  */
 static void delayed_print_internal( bool center
                                   , const char* slice
-                                  , size_t length) {
+                                  , size_t length
+                                  ) {
     assert(NULL != slice);
 
     if (center) {
@@ -294,7 +295,8 @@ typedef struct {
 
 static void selector_add_message( Selector*   selector
                                 , bool        center
-                                , const char* message) {
+                                , const char* message
+                                ) {
     assert(NULL != selector);
     assert(SELECTOR_MESSAGES_MAX_SIZE > selector->messages_size );
     assert(NULL != message);
@@ -306,7 +308,8 @@ static void selector_add_message( Selector*   selector
 static void selector_add_option( Selector*   selector
                                , char        option
                                , bool        center_description
-                               , const char* description) {
+                               , const char* description
+                               ) {
     assert(NULL != selector);
     assert(SELECTOR_OPTIONS_MAX_SIZE > selector->options_size);
     assert(!isspace(option));
@@ -379,7 +382,7 @@ typedef enum {
     ITEM_SANDBOXER,
     // The RANSOMWARE is stored on the map as an item since there is not going
     // to be an item in that room anyways.
-    ITEM_RANSOMWARE
+    ITEM_RANSOMWARE,
 } ItemType;
 
 static const char* item_type_name(ItemType type) {
@@ -393,7 +396,8 @@ static const char* item_type_name(ItemType type) {
     case ITEM_SANDBOXER:                return "Sandboxer";
     case ITEM_NONE:                     return "None";
     case ITEM_RANSOMWARE:               return "The RANSOMWARE";
-    default:                            assert(false && "unreachable");
+
+    default: assert(false && "unreachable");
     }
 }
 
@@ -430,7 +434,8 @@ static void inventory_add_item(Inventory* inventory, Item item) {
 
 static void inventory_try_remove_item( Inventory* inventory
                                      , ItemType type
-                                     , size_t quantity) {
+                                     , size_t quantity
+                                     ) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == type) return;
@@ -468,7 +473,7 @@ typedef enum {
     DIRECTION_LEFT,
     DIRECTION_RIGHT,
     // Quantifier.
-    DIRECTION_COUNT
+    DIRECTION_COUNT,
 } Direction;
 
 static Direction direction_opposite(Direction direction) {
@@ -477,6 +482,7 @@ static Direction direction_opposite(Direction direction) {
     case DIRECTION_DOWN:  return DIRECTION_UP;
     case DIRECTION_LEFT:  return DIRECTION_RIGHT;
     case DIRECTION_RIGHT: return DIRECTION_LEFT;
+
     case DIRECTION_COUNT:
     default: assert(false && "unreachable");
     }
@@ -502,7 +508,7 @@ typedef enum {
     SYSTEM_TYPE_COUNT,
     // Inital room. Must be after SYSTEM_TYPE_COUNT so map generator does not
     // try to generate an extra room for it.
-    SYSTEM_BOOTLOADER
+    SYSTEM_BOOTLOADER,
 } SystemType;
 
 static const char* system_type_name(SystemType type) {
@@ -539,9 +545,9 @@ static const char* system_type_name(SystemType type) {
         return "Conway's Ivory Tower";
     case SYSTEM_RANDOM_INFORMATION_GENERATOR:
         return "Random-Information-Generator";
+
     case SYSTEM_TYPE_COUNT:
-    default:
-        assert(false && "unreachable");
+    default: assert(false && "unreachable");
     }
 }
 
