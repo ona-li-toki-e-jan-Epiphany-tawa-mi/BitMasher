@@ -277,65 +277,32 @@ static void await_player(bool center) {
     }
 }
 
+#define SELECTOR_OPTIONS_MAX_COUNT  25
 // Zero-initialized.
 typedef struct {
-    const char* data;
-    bool        center;
-} SelectorMessage;
-
-#define SELECTOR_OPTIONS_MAX_SIZE  25
-#define SELECTOR_MESSAGES_MAX_SIZE 2*SELECTOR_OPTIONS_MAX_SIZE
-// Zero-initialized.
-typedef struct {
-    SelectorMessage messages[SELECTOR_MESSAGES_MAX_SIZE];
-    size_t          messages_size;
-    char            options[SELECTOR_OPTIONS_MAX_SIZE];
-    size_t          options_size;
+    char   options[SELECTOR_OPTIONS_MAX_COUNT];
+    size_t count;
 } Selector;
 
-static void selector_add_message( Selector*   selector
-                                , bool        center
-                                , const char* message
-                                ) {
+static void selector_add_option(Selector* selector, char option) {
     assert(NULL != selector);
-    assert(SELECTOR_MESSAGES_MAX_SIZE > selector->messages_size );
-    assert(NULL != message);
-
-    SelectorMessage smessage = { .data = message, .center = center };
-    selector->messages[selector->messages_size++] = smessage;
-}
-
-static void selector_add_option( Selector*   selector
-                               , char        option
-                               , bool        center_description
-                               , const char* description
-                               ) {
-    assert(NULL != selector);
-    assert(SELECTOR_OPTIONS_MAX_SIZE > selector->options_size);
     assert(!isspace(option));
-    assert(NULL != description);
 
-    selector->options[selector->options_size++] = (char)tolower(option);
-    selector_add_message(selector, center_description, description);
+    assert(SELECTOR_OPTIONS_MAX_COUNT > selector->count);
+    selector->options[selector->count++] = (char)tolower(option);
 }
 
 static void selector_clear(Selector* selector) {
     assert(NULL != selector);
 
-    selector->messages_size = 0;
-    selector->options_size  = 0;
+    selector->count = 0;
 }
 
 #define SELECTOR_GET_SELECTION_BUFFER_SIZE 50
 static char selector_get_selection(const Selector* selector) {
     assert(NULL != selector);
 
-    if (0 == selector->options_size) return '\0';
-
-    for (size_t i = 0; i < selector->messages_size; ++i) {
-        SelectorMessage message = selector->messages[i];
-        delayed_print(message.center, message.data);
-    }
+    if (0 == selector->count) return '\0';
 
     while (true) {
         static char buffer[SELECTOR_GET_SELECTION_BUFFER_SIZE] = {0};
@@ -353,7 +320,7 @@ static char selector_get_selection(const Selector* selector) {
 
         selection = (char)tolower(selection);
         bool valid_selection = false;
-        for (size_t option = 0; option < selector->options_size; ++option)
+        for (size_t option = 0; option < selector->count; ++option)
             if (selection == selector->options[option]) {
                 valid_selection = true;
                 break;
@@ -939,11 +906,11 @@ static void run_exit_sequence() {
 
 static void run_start_menu() {
     Selector start_menu = {0};
-    selector_add_option(&start_menu, 'p', true, "(P)LAY");
-    selector_add_option(&start_menu, 'i', true, "(I)NSTRUCTIONS");
-    selector_add_option(&start_menu, 'a', true, "(A)BOUT");
-    selector_add_option(&start_menu, 'l', true, "(L)ICENSE");
-    selector_add_option(&start_menu, 'e', true, "(E)XIT");
+    selector_add_option(&start_menu, 'p'); // (P)LAY
+    selector_add_option(&start_menu, 'i'); // (I)NSTRUCTIONS
+    selector_add_option(&start_menu, 'a'); // (A)BOUT
+    selector_add_option(&start_menu, 'l'); // (L)ICENSE
+    selector_add_option(&start_menu, 'e'); // (E)XIT
 
     while (true) {
         clear();
@@ -958,6 +925,11 @@ static void run_start_menu() {
                             "select an option.");
         delayed_print_newline();
 
+        delayed_print(true, "(P)LAY");
+        delayed_print(true, "(I)NSTRUCTIONS");
+        delayed_print(true, "(A)BOUT");
+        delayed_print(true, "(L)ICENSE");
+        delayed_print(true, "(E)XIT");
         char choice = selector_get_selection(&start_menu);
         switch (choice) {
         case 'p': return;
