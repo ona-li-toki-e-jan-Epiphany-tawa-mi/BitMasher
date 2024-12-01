@@ -31,7 +31,9 @@
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,19 +159,37 @@ static void delayed_print_internal( bool center
     sleep_ns(DELAYED_PRINT_DELAY_NS);
 }
 
+#define DELAYED_PRINT_MAX_BUFFER_SIZE 512
 /**
  * Prints a message line-by-line. Each line is printed with a delay to give an
  * old computer vibe.
  *
  * @param center - whether to print the lines centered in the terminal.
+ * @param format - like with the printf function family.
  */
-static void delayed_print(bool center, const char* message) {
-    assert(NULL != message);
+static void delayed_print(bool center, const char* format, ...) {
+    assert(NULL != format);
+
+    // Use vsnprintf to handle the format string.
+    static char buffer[DELAYED_PRINT_MAX_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    int result = vsnprintf(buffer, DELAYED_PRINT_MAX_BUFFER_SIZE, format, args);
+    if (0 > result) {
+        (void)fprintf(stderr, "ERROR: "__FILE__":%s: failed to run vsnprintf: "
+                              "%s\n", __func__, strerror(errno));
+        exit(1);
+    } else if (result >= DELAYED_PRINT_MAX_BUFFER_SIZE) {
+        (void)fprintf(stderr, "WARN: "__FILE__":%s: output truncated when "
+                              "running vsnprintf with format '%s'\n", __func__
+                            , format);
+    }
+    va_end(args);
 
     const Terminal* terminal = terminal_size();
-    const char*     start   = message;
-    const char*     end     = start;
-    size_t          length  = 0;
+    const char*     start    = buffer;
+    const char*     end      = start;
+    size_t          length   = 0;
 
     while ('\0' != *end) {
         ++length;
@@ -210,7 +230,7 @@ static void delayed_print_newline() {
 static void clear() {
     // \x1B[2J - clears screen.
     // \x1B[H  - returns cursor to home position.
-    fputs("\x1B[2J\x1B[H", stdout);
+    (void)fputs("\x1B[2J\x1B[H", stdout);
 }
 
 /**
