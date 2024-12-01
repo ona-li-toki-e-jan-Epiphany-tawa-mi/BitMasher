@@ -426,28 +426,7 @@ def generateMap(requiredItems: Inventory) -> System:
         for i in range(lastItemIndex, len(itemPool) - 1):
             requiredItems.tryRemoveItem(itemPool[i])
 
-        # Warning for partial map generation.
-        clearScreen()
-        delayedPrint("WARNING: Unable to generate enough systems!", center=True)
-        delayedPrint("Could only place {} items from a pool of {}".format(
-                requiredItems.countItems(), postgenRequiredItemsCount)
-                    , center=True)
-        delayedPrint(
-            "There are only {} systems avalible in total for generation".format(
-                len(systemPool))
-            , center=True
-        )
-        delayedPrint(
-            "Please notify the developer(s) so they can fix it",
-            center=True
-        )
-        delayedPrint()
-        delayedPrint(
-            "The game should still run fine, so feel free to continue PLAYing",
-            center=True
-        )
-        delayedPrint()
-        awaitPlayer(center=True)
+
 
     return startingSystem
 

@@ -535,6 +535,7 @@ struct System {
 
 #define MAP_MAX_COUNT 50
 // Zero-initialized.
+// Must be heap allocated, else systems[n]->adjacent could be invalidated.
 typedef struct {
     // First system is the root node of the map.
     System systems[MAP_MAX_COUNT];
@@ -570,7 +571,8 @@ static Map* generate_map(Inventory* items) {
     root_node->type   = SYSTEM_BOOTLOADER;
     root_node->item   = ITEM_NONE;
 
-    Inventory item_pool = *items;
+    size_t    expected_item_count = items->count;
+    Inventory item_pool           = *items;
     // Clear the source items inventory so we can add back only the ones that
     // were placed on the map.
     inventory_clear(items);
@@ -689,14 +691,26 @@ static Map* generate_map(Inventory* items) {
         if (placed_item) ++next_system_index;
     }
 
-    // TODO consider throwing error when not all items are generated.
+    // Warning for partial map generation.
+    if (expected_item_count != items->count) {
+        clear();
+        (void)fprintf(stderr, "WARN: Unable to generate enough systems\n");
+        (void)fprintf(stderr, "      Could only place %zu items from a pool of "
+                              "%zu\n", items->count, expected_item_count);
+        (void)fprintf(stderr, "      There are only %zu systems avalible in "
+                              "total for generation\n", systems_generated);
+    }
 
-    (void)fprintf(stderr, "MAP GENERATOR STATISTICS\n");
-    (void)fprintf(stderr, "Total traverser steps: %zu\n", steps_taken);
-    (void)fprintf(stderr, "Systems generated: %zu\n", systems_generated);
+    (void)fprintf(stderr, "INFO: Map generator statistics:\n");
+    (void)fprintf(stderr, "      Total traverser steps - %zu\n", steps_taken);
+    (void)fprintf(stderr, "      Systems generated - %zu\n", systems_generated);
 
     return map;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Battle                                                                     //
+////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 // Game                                                                       //
