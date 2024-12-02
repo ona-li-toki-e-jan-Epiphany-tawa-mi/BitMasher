@@ -445,11 +445,6 @@ def runGame():
 
         choice = gameMenu.getSelection()
 
-        elif choice == 't':
-            inventory.addItem(currentSystem.item)
-            requiredItems.tryRemoveItem(currentSystem.item)
-            currentSystem.item = ItemType.NONE
-
         elif choice == 's':
             delayedPrint()
             delayedPrint("SCANning...")

@@ -932,7 +932,14 @@ static void run_game(void) {
             current_system = current_system->adjacent[DIRECTION_RIGHT];
         } break;
 
-        case 't': assert(false && "TODO");
+        case 't': {
+            inventory_add_item(&inventory, (Item) {
+                .type     = current_system->item,
+                .quantity = 1,
+            });
+            inventory_try_remove_item(&required_items, current_system->item, 1);
+            current_system->item = ITEM_NONE;
+        } break;
 
         case 's': assert(false && "TODO");
 
