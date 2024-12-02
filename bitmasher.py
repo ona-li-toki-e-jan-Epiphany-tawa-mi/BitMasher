@@ -413,30 +413,6 @@ class System:
 # Game                                                                         #
 ##################################################...##############################
 
-def displayInventory(inventory: Inventory, requiredItems: Inventory):
-    """ Displays the items the player has and the items that still need to be
-        collected. Will return once they decide to leave the INVENTORY menu. """
-    clearScreen()
-    delayedPrint("INVENTORY:", center=True)
-    delayedPrint()
-    if inventory.isEmpty():
-        delayedPrint("Empty...", center=True)
-    else:
-        for item, count in inventory: # type: ignore # False positive about __next__.
-            delayedPrint(f"- {item.name}: {count}", center=True)
-
-    delayedPrint()
-    delayedPrint("Remaining Items:", center=True)
-    delayedPrint()
-    if requiredItems.isEmpty():
-        delayedPrint("Everything needed has been found...", center=True)
-    else:
-        for item, count in requiredItems: # type: ignore # False positive about __next__.
-            delayedPrint(f"- {item.name}: {count}", center=True)
-
-    delayedPrint()
-    awaitPlayer(center=True)
-
 def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when
         the player decides to leave or they fail/complete it. """
@@ -484,9 +460,3 @@ def runGame():
                     continue
 
                 system.tryScan()
-
-        elif choice == 'i':
-            displayInventory(inventory, requiredItems)
-
-        elif choice == 'e':
-            return

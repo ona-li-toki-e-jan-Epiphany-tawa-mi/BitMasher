@@ -807,6 +807,42 @@ static void generate_required_items(Inventory* inventory) {
     }
 }
 
+static void display_inventory( const Inventory* inventory
+                             , const Inventory* required_items
+                             ) {
+    assert(NULL != inventory);
+    assert(NULL != required_items);
+
+    clear();
+    delayed_print(true, "INVENTORY:");
+    delayed_print_newline();
+    if (0 == inventory->count) {
+        delayed_print(true, "Empty...");
+    } else {
+        for (size_t i = 0; i < inventory->count; ++i) {
+            const Item* item = &inventory->items[i];
+            delayed_print(true, "- %s: %zu", item_type_name(item->type)
+                              , item->quantity);
+        }
+    }
+
+    delayed_print_newline();
+    delayed_print(true, "Remaining Items:");
+    delayed_print_newline();
+    if (0 == required_items->count) {
+        delayed_print(true, "Everything needed has been found...");
+    } else {
+        for (size_t i = 0; i < required_items->count; ++i) {
+            const Item* item = &required_items->items[i];
+            delayed_print(true, "- %s: %zu", item_type_name(item->type)
+                              , item->quantity);
+        }
+    }
+
+    delayed_print_newline();
+    await_player(true);
+}
+
 static void run_game(void) {
     Inventory required_items = {0};
     generate_required_items(&required_items);
@@ -815,7 +851,8 @@ static void run_game(void) {
     long lose_time = get_time_s() + (long)required_items.count
         * SECONDS_PER_SYSTEM;
 
-    Selector game_menu = {0};
+    Inventory inventory = {0};
+    Selector  game_menu = {0};
     assert(0 < map->count);
     System* current_system = &map->systems[0];
 
@@ -899,7 +936,7 @@ static void run_game(void) {
 
         case 's': assert(false && "TODO");
 
-        case 'i': assert(false && "TODO");
+        case 'i': display_inventory(&inventory, &required_items); break;
 
         case 'e': game_running = false; break;
 
@@ -910,6 +947,7 @@ static void run_game(void) {
     }
 
     free(map);
+    map = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
