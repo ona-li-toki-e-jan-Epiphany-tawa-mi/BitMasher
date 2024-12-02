@@ -304,7 +304,11 @@ static void selector_add_option(Selector* selector, char option) {
     assert(NULL != selector);
     assert(!isspace(option));
 
-    // TODO assert that option does not already exist.
+#ifndef NDEBUG
+    for (size_t i = 0; i < selector->count; ++i) {
+        assert(option != selector->options[i]);
+    }
+#endif // NDEBUG
 
     assert(SELECTOR_OPTIONS_MAX_COUNT > selector->count);
     selector->options[selector->count++] = (char)tolower(option);
@@ -447,6 +451,39 @@ static void inventory_clear(Inventory* inventory) {
 
     inventory->count = 0;
 }
+
+/* /\** */
+/*  * Takes the items and places their types into a single array. Types will appear */
+/*  * as many times as their item's quantity. */
+/*  * */
+/*  * @param size - a pointer to store the size of the array into. */
+/*  * @return the array's pointer. MUST be freed with free(). */
+/*  *\/ */
+/* static ItemType* inventory_to_item_type_array( const Inventory* inventory */
+/*                                              , size_t* size) { */
+/*     assert(NULL != inventory); */
+/*     assert(NULL != size); */
+
+/*     *size = 0; */
+/*     for (size_t item = 0; item < inventory->count; ++item) { */
+/*         *size += inventory->items[item].quantity; */
+/*     } */
+
+/*     ItemType* item_types = calloc(*size, sizeof(ItemType)); */
+/*     if (NULL == item_types) { */
+/*         perror("Unable to allocate memory for map item types array"); */
+/*         exit(1); */
+/*     } */
+
+/*     size_t item_type_index = 0; */
+/*     for (size_t i = 0; i < inventory->count; ++i) */
+/*         for (size_t j = 0; j = inventory->items[i].quantity; ++j) { */
+/*             assert(*size > item_type_index); */
+/*             item_types[item_type_index++] = inventory->items[i].type; */
+/*         } */
+
+/*     return item_types; */
+/* } */
 
 ////////////////////////////////////////////////////////////////////////////////
 // Systems                                                                    //
