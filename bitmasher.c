@@ -73,7 +73,7 @@ typedef struct {
     unsigned long height;
 } Terminal;
 
-static const Terminal* terminal_size() {
+static const Terminal* terminal_size(void) {
     static Terminal terminal = {0};
     static bool dynamic_size = true;
 
@@ -120,7 +120,7 @@ static void sleep_ns(long nanoseconds) {
     (void)nanosleep(&time, NULL);
 }
 
-static long get_time_s() {
+static long get_time_s(void) {
     struct timespec tp;
     if (-1 == clock_gettime(CLOCK_MONOTONIC, &tp)) {
         perror("Failed to read from monotonic clock");
@@ -139,7 +139,7 @@ static long get_time_s() {
  *
  * @param stream_name - the name of the stream for error messages.
  */
-static void handle_stdin_error() {
+static void handle_stdin_error(void) {
     if (0 != feof(stdin)) {
         (void)fprintf(stderr, "ERROR: encountered EOF reading stdin\n");
         exit(1);
@@ -250,11 +250,11 @@ static void delayed_print(bool center, const char* format, ...) {
 /**
  * Prints a newline with a delay to give an old computer vibe.
  */
-static void delayed_print_newline() {
+static void delayed_print_newline(void) {
     delayed_print(false, "\n");
 }
 
-static void clear() {
+static void clear(void) {
     // \x1B[2J - clears screen.
     // \x1B[H  - returns cursor to home position.
     (void)fputs("\x1B[2J\x1B[H", stdout);
@@ -751,7 +751,7 @@ static void generate_required_items(Inventory* inventory) {
     }
 }
 
-static void run_game() {
+static void run_game(void) {
     Inventory required_items = {0};
     generate_required_items(&required_items);
     Map* map = generate_map(&required_items);
@@ -873,7 +873,7 @@ static const char* logo[] = {
 
 static const char* version = "V6.327438247";
 
-static void run_instructions_menu() {
+static void run_instructions_menu(void) {
     clear();
 
     delayed_print(true, "INSTRUCTIONS");
@@ -907,7 +907,7 @@ static void run_instructions_menu() {
     await_player(true);
 }
 
-static void run_about_menu() {
+static void run_about_menu(void) {
     clear();
 
     delayed_print(true, "ABOUT");
@@ -932,7 +932,7 @@ static void run_about_menu() {
     await_player(true);
 }
 
-static void run_liscense_menu() {
+static void run_license_menu(void) {
     clear();
 
     delayed_print(true, "LICENSE");
@@ -967,7 +967,7 @@ static void run_liscense_menu() {
     await_player(true);
 }
 
-static void run_exit_sequence() {
+static void run_exit_sequence(void) {
     (void)printf("EXITing");
     (void)fflush(stdout);
     sleep_ns(DELAYED_PRINT_DELAY_NS);
@@ -982,7 +982,7 @@ static void run_exit_sequence() {
     exit(0);
 }
 
-static void run_start_menu() {
+static void run_start_menu(void) {
     Selector start_menu = {0};
     selector_add_option(&start_menu, 'p'); // (P)LAY
     selector_add_option(&start_menu, 'i'); // (I)NSTRUCTIONS
@@ -1013,7 +1013,7 @@ static void run_start_menu() {
         case 'p': return;
         case 'i': run_instructions_menu(); break;
         case 'a': run_about_menu();        break;
-        case 'l': run_liscense_menu();     break;
+        case 'l': run_license_menu();     break;
         case 'e': run_exit_sequence();     break;
         default:  assert(false && "unreachable");
         }
