@@ -288,6 +288,8 @@ static void selector_add_option(Selector* selector, char option) {
     assert(NULL != selector);
     assert(!isspace(option));
 
+    // TODO assert that option does not already exist.
+
     assert(SELECTOR_OPTIONS_MAX_COUNT > selector->count);
     selector->options[selector->count++] = (char)tolower(option);
 }
@@ -758,8 +760,11 @@ static void run_game() {
         * SECONDS_PER_SYSTEM;
 
     Selector game_menu = {0};
+    assert(0 < map->count);
+    System* current_system = &map->systems[0];
 
-    while (true) {
+    bool game_running = true;
+    while (game_running) {
         long current_time = get_time_s();
         // TODO check time.
 
@@ -767,10 +772,83 @@ static void run_game() {
 
         clear();
         // TODO: scan room.
+        delayed_print(true, "%s", system_type_name(current_system->type));
         delayed_print(true, "Time left: %ld second(s)"
                           , lose_time - current_time);
+        delayed_print_newline();
 
         selector_clear(&game_menu);
+
+        // TODO add scan results.
+        // Adds possible directions to move in.
+        for (Direction direction = 0; direction < DIRECTION_COUNT; ++direction) {
+            System* system = current_system->adjacent[direction];
+            if (NULL == system) continue;
+
+            switch (direction) {
+            case DIRECTION_UP: {
+                delayed_print(false, "[%s] is (U)P above", system_type_name(system->type));
+                selector_add_option(&game_menu, 'u');
+            } break;
+            case DIRECTION_DOWN: {
+                delayed_print(false, "[%s] is (D)OWN below", system_type_name(system->type));
+                selector_add_option(&game_menu, 'd');
+            } break;
+            case DIRECTION_LEFT: {
+                delayed_print(false, "[%s] is to the (L)EFT", system_type_name(system->type));
+                selector_add_option(&game_menu, 'l');
+            } break;
+            case DIRECTION_RIGHT: {
+                delayed_print(false, "[%s] is to the (R)IGHT", system_type_name(system->type));
+                selector_add_option(&game_menu, 'r');
+            } break;
+
+            case DIRECTION_COUNT:
+            default: assert(false && "unreachable");
+            }
+        }
+
+        // Adds ability to take room's item.
+        if (ITEM_NONE != current_system->item) {
+            delayed_print(false, "There is a [%s]. (T)AKE it?"
+                               , item_type_name(current_system->item));
+            selector_add_option(&game_menu, 't');
+        }
+
+        // Adds standard actions.
+        delayed_print_newline();
+        delayed_print(false, "(S)CAN the neighboring systems");
+        selector_add_option(&game_menu, 's');
+        delayed_print(false, "Open the (I)NVENTORY");
+        selector_add_option(&game_menu, 'i');
+        delayed_print(false, "(E)XIT game");
+        selector_add_option(&game_menu, 'e');
+
+        char choice = selector_get_selection(&game_menu);
+        switch (choice) {
+        case 'u': {
+            current_system = current_system->adjacent[DIRECTION_UP];
+        } break;
+        case 'd': {
+            current_system = current_system->adjacent[DIRECTION_DOWN];
+        } break;
+        case 'l': {
+            current_system = current_system->adjacent[DIRECTION_LEFT];
+        } break;
+        case 'r': {
+            current_system = current_system->adjacent[DIRECTION_RIGHT];
+        } break;
+
+        case 't': assert(false && "TODO");
+
+        case 's': assert(false && "TODO");
+
+        case 'i': assert(false && "TODO");
+
+        case 'e': game_running = false; break;
+
+        default: assert(false && "unreachable");
+        }
 
         // TODO rest
     }

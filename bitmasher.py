@@ -467,51 +467,7 @@ def runGame():
 
         gameMenu.dumpOptions()
 
-        if currentSystem[Direction.UP] is not None:
-            gameMenu.addOption(
-                'u',
-                currentSystem[Direction.UP].tryAppendScanResult(
-                    f"[{currentSystem[Direction.UP].name()}] is (U)P above")
-            )
-        if currentSystem[Direction.DOWN] is not None:
-            gameMenu.addOption(
-                'd',
-                currentSystem[Direction.DOWN].tryAppendScanResult(
-                    f"[{currentSystem[Direction.DOWN].name()}] is (D)OWN below")
-            )
-        if currentSystem[Direction.LEFT] is not None:
-            gameMenu.addOption(
-                'l',
-                currentSystem[Direction.LEFT].tryAppendScanResult(
-                    f"[{currentSystem[Direction.LEFT].name()}] is to the (L)EFT")
-            )
-        if currentSystem[Direction.RIGHT] is not None:
-            gameMenu.addOption(
-                'r',
-                currentSystem[Direction.RIGHT].tryAppendScanResult(
-                    f"[{currentSystem[Direction.RIGHT].name()}] is to the (R)IGHT")
-            )
-        if currentSystem.item is not ItemType.NONE:
-            gameMenu.addOption(
-                't',
-                f"There is a [{currentSystem.item.name()}]. (T)AKE it?"
-            )
-
-        gameMenu.addMessage()
-        gameMenu.addOption('s', '(S)CAN the neighboring systems')
-        gameMenu.addOption('i', 'Open the (I)NVENTORY')
-        gameMenu.addOption('e', '(E)XIT game')
-
         choice = gameMenu.getSelection()
-
-        if choice == 'u':
-            currentSystem = currentSystem[Direction.UP]
-        elif choice == 'd':
-            currentSystem = currentSystem[Direction.DOWN]
-        elif choice == 'l':
-            currentSystem = currentSystem[Direction.LEFT]
-        elif choice == 'r':
-            currentSystem = currentSystem[Direction.RIGHT]
 
         elif choice == 't':
             inventory.addItem(currentSystem.item)
@@ -534,10 +490,3 @@ def runGame():
 
         elif choice == 'e':
             return
-
-def main() -> NoReturn:
-    while True:
-        runGame()
-
-if __name__ == '__main__':
-    main()
