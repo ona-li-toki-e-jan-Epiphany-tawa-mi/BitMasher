@@ -40,11 +40,6 @@ from typing import Dict, Iterable, List, NoReturn, Tuple, Union, cast
 # Configuration                                                                #
 ################################################################################
 
-# The time, in seconds, it takes to SCAN the surrounding systems.
-SCAN_TIME = 0.8
-# The chance a SCAN will fail, given as a number between 0 and 1.
-SCAN_FAIL_CHANCE = 0.1
-
 # The amount of time, in seconds, it takes for a move to happen in the battle.
 BATTLE_MOVE_DELAY = 0.7
 # Base health for all fighters.
@@ -58,58 +53,6 @@ FIGHTER_BASE_DAMAGE = 10
 PLAYER_DAMAGE_BOOST = 5
 # The damage boost the RANSOMWARE gets per missing vulnerability.
 VULNERABILITY_DAMAGE_BOOST = 10
-
-################################################################################
-# Inventory                                                                    #
-################################################################################
-
-class Inventory:
-    """ Used to represent a set of items along with the amount of each item
-        stored. """
-    items: Dict[ItemType, int]
-
-    def __iter__(self) -> Iterable[Tuple[ItemType, int]]:
-        """ Allows iterating through the items and their counts. """
-        for each in self.items.items():
-            yield each
-
-    def toItemList(self) -> List[ItemType]:
-        """ Takes all of the items and places them in a single list. Multiple
-            items of the same type will be duplicated. """
-        itemList = []
-        for item, count in self: # type: ignore # False positive about __next__.
-            for i in range(0, count):
-                itemList.append(item)
-
-        return itemList
-
-    def countItems(self) -> int:
-        """ Returns the number of items present in the INVENTORY. """
-        counter = 0
-        for count in self.items.values():
-            counter += count
-
-        return counter
-
-    def countItem(self, item: ItemType) -> int:
-        """ Returns amount of the specified item present, returning 0 if it
-            isn't """
-        try:
-            return self.items[item]
-        except KeyError:
-            return 0
-
-    def isEmpty(self) -> bool:
-        return not self.items
-
-    def contains(self, item: ItemType) -> bool:
-        """ Checks if an item is present within the INVENTORY, regardless of
-            count. """
-        try:
-            self.items[item]
-            return True
-        except KeyError:
-            return False
 
 ################################################################################
 # Battle                                                                       #
@@ -336,80 +279,6 @@ def doRansomwareBattle(requiredItemsLeft: Inventory, loseTime: int):
         awaitPlayer()
 
 ################################################################################
-# Map/System                                                                   #
-################################################################################
-
-class ScanResult(Enum):
-    """ Represents the result of SCANning a room to find what's inside."""
-    EMPTY     = auto()
-    ABNORMAL  = auto()
-    SUSPICOUS = auto()
-    ERROR     = auto()
-    NONE      = auto()
-
-class System:
-    """ Represents a system (room) within the game. """
-    scanResult:    ScanResult
-
-    def name(self) -> str:
-        """ Returns the name of the system. """
-        return self.type.value
-
-    def __getitem__(self, direction: Direction) -> Union['System', None]:
-        """ Returns the adjacent system in the given direction. """
-        return self.adjacentRooms[direction]
-
-    def __setitem__(self, direction: Direction, room: Union['System', None]):
-        """ Sets the adjacent system in the given direction. """
-        self.adjacentRooms[direction] = room
-
-    def setAdjacent(self, direction: Direction, room: 'System'):
-        """ Sets which system is located in a direction from the current
-            one. Also sets this system's position in the adjacent one. """
-        self[direction]            = room
-        room[direction.opposite()] = self
-
-    def __iter__(self) -> Iterable[Tuple[Direction, Union['System', None]]]:
-        """ Allows iterating through the adjacent rooms and the directions they
-            are in. """
-        for each in self.adjacentRooms.items():
-            yield each
-
-    def tryScan(self, canFail: bool=True) -> ScanResult:
-        """ Attemps to scan the system. Will overwrite previous result. Has
-            small chance to fail if canFail is left true.
-
-            The new result is also returned. """
-        scanResult = None
-
-        if canFail and random.random() <= SCAN_FAIL_CHANCE:
-            scanResult = ScanResult.ERROR
-        elif self.item is ItemType.RANSOMWARE:
-            scanResult = ScanResult.SUSPICOUS
-        elif self.item is not ItemType.NONE:
-            scanResult = ScanResult.ABNORMAL
-        else:
-            scanResult = ScanResult.EMPTY
-
-        self.scanResult = scanResult
-        return scanResult
-
-    def tryAppendScanResult(self, message: str) -> str:
-        """ Appends text containing a human-readable scan result to the given
-            message. Used to show the result when printing the current and
-            nearby systems."""
-        if self.scanResult is ScanResult.NONE:
-            return message
-
-        result = None
-        if   self.scanResult is ScanResult.ERROR:     result = "[ERROR]"
-        elif self.scanResult is ScanResult.SUSPICOUS: result = "Abnormal. Suspicous activity"
-        elif self.scanResult is ScanResult.ABNORMAL:  result = "Abnormal"
-        elif self.scanResult is ScanResult.EMPTY:     result = "Empty"
-
-        return f"{message} (scan: {result})"
-
-################################################################################
 # Game                                                                         #
 ##################################################...##############################
 
@@ -427,31 +296,3 @@ def runGame():
             # Once the battle is over, the player either won or lost, so the
             # game can be ended.
             break
-
-        clearScreen()
-        currentSystem.tryScan(canFail=False)
-        delayedPrint(
-            currentSystem.tryAppendScanResult(currentSystem.name()),
-            center=True
-        )
-        delayedPrint(
-            "Time left: {:.1F} second(s)".format(
-                (loseTime - currentTime) / SECONDS_TO_NANOSECONDS)
-            , center=True
-        )
-        delayedPrint()
-
-        gameMenu.dumpOptions()
-
-        choice = gameMenu.getSelection()
-
-        elif choice == 's':
-            delayedPrint()
-            delayedPrint("SCANning...")
-            sleep(SCAN_TIME)
-
-            for _, system in currentSystem:
-                if system is None:
-                    continue
-
-                system.tryScan()

@@ -50,6 +50,11 @@
 // The amount of time the player is given per system generated.
 #define SECONDS_PER_SYSTEM 8
 
+// The time, in nanoseconds, it takes to SCAN the surrounding systems.
+#define SCAN_TIME_NS 800000000L
+// The chance a SCAN will fail, given as a number between 0 and 100.
+#define SCAN_FAIL_CHANCE 10
+
 // The time each line printed with delayed_print() waits for in nanoseconds.
 #define DELAYED_PRINT_DELAY_NS 110000000L
 
@@ -57,8 +62,8 @@
 // means it's more likely to generate a room, but loading times will have the
 // potential to increase.
 #define MAX_STEPS 100
-// The chance that the traverser choses to move to an existing room over finding
-// a new one, given as a number between 0 and 1. Make larger for spikier maps.
+// The chance that the traverser choses to move to an existing room over findinga
+// a new one, given as a number between 0 and 100. Make larger for spikier maps.
 #define MOVE_CHANCE 70
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -360,6 +365,7 @@ static char selector_get_selection(const Selector* selector) {
 // Items and Inventory                                                        //
 ////////////////////////////////////////////////////////////////////////////////
 
+// Zero-initalized.
 typedef enum {
     ITEM_NONE = 0,
     ITEM_FULL_MEMORY_READ_ACCESS,
@@ -452,39 +458,6 @@ static void inventory_clear(Inventory* inventory) {
     inventory->count = 0;
 }
 
-/* /\** */
-/*  * Takes the items and places their types into a single array. Types will appear */
-/*  * as many times as their item's quantity. */
-/*  * */
-/*  * @param size - a pointer to store the size of the array into. */
-/*  * @return the array's pointer. MUST be freed with free(). */
-/*  *\/ */
-/* static ItemType* inventory_to_item_type_array( const Inventory* inventory */
-/*                                              , size_t* size) { */
-/*     assert(NULL != inventory); */
-/*     assert(NULL != size); */
-
-/*     *size = 0; */
-/*     for (size_t item = 0; item < inventory->count; ++item) { */
-/*         *size += inventory->items[item].quantity; */
-/*     } */
-
-/*     ItemType* item_types = calloc(*size, sizeof(ItemType)); */
-/*     if (NULL == item_types) { */
-/*         perror("Unable to allocate memory for map item types array"); */
-/*         exit(1); */
-/*     } */
-
-/*     size_t item_type_index = 0; */
-/*     for (size_t i = 0; i < inventory->count; ++i) */
-/*         for (size_t j = 0; j = inventory->items[i].quantity; ++j) { */
-/*             assert(*size > item_type_index); */
-/*             item_types[item_type_index++] = inventory->items[i].type; */
-/*         } */
-
-/*     return item_types; */
-/* } */
-
 ////////////////////////////////////////////////////////////////////////////////
 // Systems                                                                    //
 ////////////////////////////////////////////////////////////////////////////////
@@ -506,6 +479,30 @@ static Direction direction_opposite(Direction direction) {
     case DIRECTION_RIGHT: return DIRECTION_LEFT;
 
     case DIRECTION_COUNT:
+    default: assert(false && "unreachable");
+    }
+
+    exit(1);
+}
+
+// Zero-initalized.
+typedef enum {
+    SCAN_NONE = 0,
+    SCAN_EMPTY,
+    SCAN_ABNORMAL,
+    SCAN_SUSPICOUS,
+    SCAN_ERROR,
+} ScanResult;
+
+static const char* scan_result_name(ScanResult scan) {
+    switch (scan) {
+    case SCAN_NONE: return "";
+
+    case SCAN_EMPTY:     return "Empty";
+    case SCAN_ABNORMAL:  return "Abnormal";
+    case SCAN_SUSPICOUS: return "Abnormal. Suspicous activity";
+    case SCAN_ERROR:     return "[ERROR]";
+
     default: assert(false && "unreachable");
     }
 
@@ -582,9 +579,41 @@ typedef struct System System;
 struct System {
     SystemType type;
     ItemType   item;
+    ScanResult scan_result;
     // Indexed by Direction. NULL means not present.
     System* adjacent[DIRECTION_COUNT];
 };
+
+static void system_try_scan(System* system, bool can_fail) {
+    assert(NULL != system);
+
+    if (can_fail && SCAN_FAIL_CHANCE > rand() % 100) {
+        system->scan_result = SCAN_ERROR;
+        return;
+    }
+
+    switch (system->item) {
+    case ITEM_RANSOMWARE: {
+        system->scan_result = SCAN_SUSPICOUS;
+    } return;
+
+    case ITEM_NONE: {
+        system->scan_result = SCAN_EMPTY;
+    } return;
+
+    case ITEM_FULL_MEMORY_READ_ACCESS:
+    case ITEM_FULL_MEMORY_WRITE_ACCESS:
+    case ITEM_POINTER_DEREFERENCER:
+    case ITEM_OS_OVERRIDE_CAPABILITY:
+    case ITEM_RANSOMWARE_CODE_FRAGMENT:
+    case ITEM_VULNERABILITY:
+    case ITEM_SANDBOXER: {
+        system->scan_result = SCAN_ABNORMAL;
+    } return;
+
+    default: assert(false && "unreachable");
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Map                                                                        //
@@ -606,6 +635,7 @@ static System* map_alloc_system(Map* map) {
     return &map->systems[map->count++];
 }
 
+// FIXME: generator places ransomware in way of other items.
 static Map* generate_map(Inventory* items) {
     assert(NULL != items);
 
@@ -863,8 +893,18 @@ static void run_game(void) {
 
         // TODO handle ransomware.
 
+        // Scan the current system if the user moved into an unscanned room.
+        system_try_scan(current_system, false);
+
+        // Display status.
         clear();
-        // TODO: scan room.
+        if (SCAN_NONE != current_system->scan_result) {
+            delayed_print(true, "%s (scan: %s)"
+                              , system_type_name(current_system->type)
+                              , scan_result_name(current_system->scan_result));
+        } else {
+            delayed_print(true, "%s", system_type_name(current_system->type));
+        }
         delayed_print(true, "%s", system_type_name(current_system->type));
         delayed_print(true, "Time left: %ld second(s)"
                           , lose_time - current_time);
@@ -872,7 +912,7 @@ static void run_game(void) {
 
         selector_clear(&game_menu);
 
-        // TODO add scan results.
+        // TODO see if can be simplified.
         // Adds possible directions to move in.
         for (Direction direction = 0; direction < DIRECTION_COUNT; ++direction) {
             System* system = current_system->adjacent[direction];
@@ -880,19 +920,47 @@ static void run_game(void) {
 
             switch (direction) {
             case DIRECTION_UP: {
-                delayed_print(false, "[%s] is (U)P above", system_type_name(system->type));
+                if (SCAN_NONE != system->scan_result) {
+                    delayed_print(false, "[%s (scan: %s)] is (U)P above"
+                                       , system_type_name(system->type)
+                                       , scan_result_name(system->scan_result));
+                } else {
+                    delayed_print(false, "[%s] is (U)P above"
+                                       , system_type_name(system->type));
+                }
                 selector_add_option(&game_menu, 'u');
             } break;
             case DIRECTION_DOWN: {
-                delayed_print(false, "[%s] is (D)OWN below", system_type_name(system->type));
+                if (SCAN_NONE != system->scan_result) {
+                    delayed_print(false, "[%s (scan: %s)] is (D)OWN below"
+                                       , system_type_name(system->type)
+                                       , scan_result_name(system->scan_result));
+                } else {
+                    delayed_print(false, "[%s] is (D)OWN below"
+                                       , system_type_name(system->type));
+                }
                 selector_add_option(&game_menu, 'd');
             } break;
             case DIRECTION_LEFT: {
-                delayed_print(false, "[%s] is to the (L)EFT", system_type_name(system->type));
+                if (SCAN_NONE != system->scan_result) {
+                    delayed_print(false, "[%s (scan: %s)] is to the (L)EFT"
+                                       , system_type_name(system->type)
+                                       , scan_result_name(system->scan_result));
+                } else {
+                    delayed_print(false, "[%s] is to the (L)EFT"
+                                       , system_type_name(system->type));
+                }
                 selector_add_option(&game_menu, 'l');
             } break;
             case DIRECTION_RIGHT: {
-                delayed_print(false, "[%s] is to the (R)IGHT", system_type_name(system->type));
+                if (SCAN_NONE != system->scan_result) {
+                    delayed_print(false, "[%s (scan: %s)] is to the (R)IGHT"
+                                       , system_type_name(system->type)
+                                       , scan_result_name(system->scan_result));
+                } else {
+                    delayed_print(false, "[%s] is to the (R)IGHT"
+                                       , system_type_name(system->type));
+                }
                 selector_add_option(&game_menu, 'r');
             } break;
 
@@ -941,7 +1009,19 @@ static void run_game(void) {
             current_system->item = ITEM_NONE;
         } break;
 
-        case 's': assert(false && "TODO");
+        case 's': {
+            delayed_print_newline();
+            delayed_print(false, "SCANning...");
+            sleep_ns(SCAN_TIME_NS);
+
+            for ( Direction direction = 0
+                ; direction < DIRECTION_COUNT
+                ; ++direction
+                ) {
+                System* adjacent = current_system->adjacent[direction];
+                if (NULL != adjacent) system_try_scan(adjacent, true);
+            }
+        } break;
 
         case 'i': display_inventory(&inventory, &required_items); break;
 
@@ -949,8 +1029,6 @@ static void run_game(void) {
 
         default: assert(false && "unreachable");
         }
-
-        // TODO rest
     }
 
     free(map);
