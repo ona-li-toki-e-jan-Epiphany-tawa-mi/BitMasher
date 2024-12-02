@@ -67,6 +67,19 @@
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 
+/*
+ * Macro to typecheck printf-like functions.
+ * Works in gcc and clang.
+ * format - the argument number (1-indexed) that has the format string.
+ * va_list - the argument number that has the variable argument list (...).
+ */
+#ifdef __GNUC__
+#  define PRINTF_TYPECHECK(format, va_list) \
+    __attribute__ ((__format__ (printf, format, va_list)))
+#else // __GNUC__
+#  define PRINTF_TYPECHECK(format, va_list)
+#endif
+
 // Zero-initialized.
 typedef struct {
     unsigned long width;
@@ -194,7 +207,10 @@ static void delayed_print_internal( bool center
  * @param center - whether to print the lines centered in the terminal.
  * @param format - like with the printf function family.
  */
-static void delayed_print(bool center, const char* format, ...) {
+static void PRINTF_TYPECHECK(2, 3) delayed_print( bool center
+                                                 , const char* format
+                                                 , ...
+                                                 ) {
     assert(NULL != format);
 
     // Use vsnprintf to handle the format string.
@@ -455,6 +471,8 @@ static Direction direction_opposite(Direction direction) {
     case DIRECTION_COUNT:
     default: assert(false && "unreachable");
     }
+
+    exit(1);
 }
 
 typedef enum {
@@ -518,10 +536,11 @@ static const char* system_type_name(SystemType type) {
     case SYSTEM_TYPE_COUNT:
     default: assert(false && "unreachable");
     }
+
+    exit(1);
 }
 
 // Zero-initialized.
-// TODO add free function for adjacent systems.
 typedef struct System System;
 struct System {
     SystemType type;
@@ -994,10 +1013,10 @@ static void run_start_menu(void) {
         clear();
 
         for (size_t line = 0; line < ARRAY_SIZE(logo); ++line) {
-            delayed_print(true, logo[line]);
+            delayed_print(true, "%s", logo[line]);
         }
         delayed_print_newline();
-        delayed_print(true, version);
+        delayed_print(true, "%s", version);
         delayed_print_newline();
         delayed_print(true, "Type and enter the character in paranthesis to "
                             "select an option.");
