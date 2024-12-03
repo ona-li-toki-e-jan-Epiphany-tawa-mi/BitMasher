@@ -635,8 +635,72 @@ static System* map_alloc_system(Map* map) {
     return &map->systems[map->count++];
 }
 
-// FIXME: generator places ransomware in way of other items.
-static Map* generate_map(Inventory* items) {
+static bool map_try_place_system( Map* map
+                                , SystemType system
+                                , ItemType item
+                                , size_t* steps_taken
+                                ) {
+    assert(NULL != map);
+    assert(0 < map->count);
+    assert(NULL != steps_taken);
+
+    System* previous_system = NULL;
+    System* traverser       = &map->systems[0];
+
+    // Traverse map and a system to it.
+    for (size_t steps_left = MAX_STEPS; 0 < steps_left; --steps_left) {
+        *steps_taken += 1;
+
+        if (MOVE_CHANCE > rand() % 100) {
+            // Gathers possible systems to move to.
+            System* adjacents[DIRECTION_COUNT] = {0};
+            size_t  adjacents_count            = 0;
+            for ( Direction direction = 0
+                ; direction < DIRECTION_COUNT
+                ; ++direction
+                ) {
+                System* adjacent = traverser->adjacent[direction];
+                if (NULL != adjacent && adjacent != previous_system) {
+                    adjacents[adjacents_count++] = adjacent;
+                }
+            }
+            if (0 == adjacents_count) continue;
+
+            previous_system = traverser;
+            traverser       = adjacents[(size_t)rand() % adjacents_count];
+
+        } else {
+            // Gathers possible directions to add systems to.
+            Direction directions[DIRECTION_COUNT] = {0};
+            size_t    directions_count            = 0;
+            for ( Direction direction = 0
+                ; direction < DIRECTION_COUNT
+                ; ++direction
+                ) {
+                if (NULL == traverser->adjacent[direction]) {
+                    directions[directions_count++] = direction;
+                }
+            }
+            if (0 == directions_count) continue;
+
+            System* next_system = map_alloc_system(map);
+            next_system->type   = system;
+            next_system->item   = item;
+
+            Direction direction
+                = directions[(size_t)rand() % directions_count];
+            traverser->adjacent[direction] = next_system;
+            next_system->adjacent[direction_opposite(direction)]
+                = traverser;
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static Map* map_generate(Inventory* items) {
     assert(NULL != items);
 
     Map* map = calloc(1, sizeof(Map));
@@ -655,12 +719,6 @@ static Map* generate_map(Inventory* items) {
     // Clear the source items inventory so we can add back only the ones that
     // were placed on the map.
     inventory_clear(items);
-    // We append the RANSOMWARE at the end so it is generated last so that there
-    // is a path to every other item.
-    inventory_add_item(&item_pool, (Item) {
-        .type     = ITEM_RANSOMWARE,
-        .quantity = 1
-    });
 
     SystemType system_pool[SYSTEM_TYPE_COUNT] = {0};
     for (SystemType type = 0; type < ARRAY_SIZE(system_pool); ++type) {
@@ -686,93 +744,45 @@ static Map* generate_map(Inventory* items) {
         // If this index meets or exceeds the last index in the system pool,
         // then there are more items then systems, so we need to prioritize
         // placing the RANSOMWARE.
-        if (next_system_index >= ARRAY_SIZE(system_pool) - 1)
-            while (1 < item_pool.count)
-                for (size_t i = 0; i < item_pool.count; ++i) {
-                    Item item = item_pool.items[i];
-                    if (ITEM_RANSOMWARE != item.type) {
-                        inventory_try_remove_item( &item_pool
-                                                 , item.type
-                                                 , item.quantity);
-                        break;
-                    }
-                }
-
-        bool    placed_item     = false;
-        System* previous_system = NULL;
-        System* traverser       = root_node;
-
-        // Traverse map and a system to it.
-        for (size_t steps_left = MAX_STEPS; 0 < steps_left; --steps_left) {
-            ++steps_taken;
-
-            if (MOVE_CHANCE > rand() % 100) {
-                // Gathers possible systems to move to.
-                System* adjacents[DIRECTION_COUNT] = {0};
-                size_t  adjacents_count            = 0;
-                for ( Direction direction = 0
-                    ; direction < DIRECTION_COUNT
-                    ; ++direction
-                    ) {
-                    System* adjacent = traverser->adjacent[direction];
-                    if (NULL != adjacent && adjacent != previous_system) {
-                        adjacents[adjacents_count++] = adjacent;
-                    }
-                }
-                if (0 == adjacents_count) continue;
-
-                previous_system = traverser;
-                traverser       = adjacents[(size_t)rand() % adjacents_count];
-
-            } else {
-                // Gathers possible directions to add systems to.
-                Direction directions[DIRECTION_COUNT] = {0};
-                size_t    directions_count            = 0;
-                for ( Direction direction = 0
-                    ; direction < DIRECTION_COUNT
-                    ; ++direction
-                    ) {
-                    if (NULL == traverser->adjacent[direction]) {
-                        directions[directions_count++] = direction;
-                    }
-                }
-                if (0 == directions_count) continue;
-
-                System* next_system = map_alloc_system(map);
-                next_system->type   = system_pool[next_system_index];
-                next_system->item   = item_pool.items[0].type;
-
-                Direction direction
-                    = directions[(size_t)rand() % directions_count];
-                traverser->adjacent[direction] = next_system;
-                next_system->adjacent[direction_opposite(direction)]
-                    = traverser;
-                placed_item = true;
-
-                ++systems_generated;
-                break;
-            }
+        if (next_system_index >= ARRAY_SIZE(system_pool) - 1) {
+            break;
         }
 
-        // Mark item as present.
-        if (ITEM_RANSOMWARE != item_pool.items[0].type) {
+        bool placed_item = map_try_place_system( map
+                                               , system_pool[next_system_index]
+                                               , item_pool.items[0].type
+                                               , &steps_taken);
+
+        if (placed_item) {
+            ++systems_generated;
+            ++next_system_index;
+
+            // Mark item as present.
             inventory_add_item(items, (Item) {
                 .type     = item_pool.items[0].type,
                 .quantity = 1
             });
         }
+
         // Consume item.
         inventory_try_remove_item( &item_pool
                                  , item_pool.items[0].type
                                  , 1);
-        // If we couldn't place the item, we still might be able to use the
-        // system for the next one.
-        if (placed_item) ++next_system_index;
     }
+
+    // We place the RANSOMWARE last so so that there is a path to every item.
+    if (!map_try_place_system( map
+                             , system_pool[next_system_index]
+                             , ITEM_RANSOMWARE
+                             , &steps_taken)
+                             ) {
+        (void)fprintf(stderr, "ERROR: Unable to place ransomware on the map\n");
+        exit(1);
+    }
+    ++systems_generated;
 
     // Warning for partial map generation.
     if (expected_item_count != items->count) {
-        clear();
         (void)fprintf(stderr, "WARN: Unable to generate enough systems\n");
         (void)fprintf(stderr, "      Could only place %zu items from a pool of "
                               "%zu\n", items->count, expected_item_count);
@@ -876,7 +886,7 @@ static void display_inventory( const Inventory* inventory
 static void run_game(void) {
     Inventory required_items = {0};
     generate_required_items(&required_items);
-    Map* map = generate_map(&required_items);
+    Map* map = map_generate(&required_items);
 
     long lose_time = get_time_s() + (long)required_items.count
         * SECONDS_PER_SYSTEM;
