@@ -915,7 +915,6 @@ static void run_game(void) {
         } else {
             delayed_print(true, "%s", system_type_name(current_system->type));
         }
-        delayed_print(true, "%s", system_type_name(current_system->type));
         delayed_print(true, "Time left: %ld second(s)"
                           , lose_time - current_time);
         delayed_print_newline();
