@@ -696,6 +696,12 @@ static bool map_try_place_system( Map *const       map
     return false;
 }
 
+/**
+ * Generates a new map.
+ * @param items - the items to place on the map. The items that couldn't be
+ * placed will be removed from this inventory.
+ * @return caller must free().
+ */
 static Map* map_generate(Inventory *const items) {
     assert(NULL != items);
 
@@ -975,7 +981,7 @@ static void display_inventory( const Inventory *const inventory
 static void run_game(void) {
     Inventory required_items = {0};
     generate_required_items(&required_items);
-    Map* map = map_generate(&required_items);
+    Map* map = map_generate(&required_items); // Must free().
 
     const long lose_time = get_time_s() + (long)required_items.count
         * SECONDS_PER_SYSTEM;
@@ -988,7 +994,11 @@ static void run_game(void) {
     bool game_running = true;
     while (game_running) {
         const long current_time = get_time_s();
-        // TODO check time.
+        if (current_time >= lose_time) {
+            run_lose_sequence();
+            game_running = false;
+            break;
+        }
 
         // TODO handle ransomware.
 

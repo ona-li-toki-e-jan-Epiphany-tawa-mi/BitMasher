@@ -58,34 +58,6 @@ VULNERABILITY_DAMAGE_BOOST = 10
 # Battle                                                                       #
 ################################################################################
 
-def randomCharacter():
-    """ Generates a random printable ASCII character. """
-    return chr(random.randint(0x21, 0x7E))
-
-def garbleString(string: str):
-    """ Randomly replaces characters within a string. """
-    mutableString  = list(string)
-    characterCount = len(mutableString)
-    replacements   = random.randint(0, characterCount)
-
-    for i in range(0, replacements):
-        index                = random.randrange(0, characterCount)
-        mutableString[index] = randomCharacter()
-
-    return "".join(mutableString)
-
-def annoyingCase(string: str):
-    """ Randomly changes the case of letters in the string. """
-    mutableString = list(string)
-
-    for i in range(0, len(mutableString)):
-        if random.randint(0, 1) == 1:
-            mutableString[i] = mutableString[i].lower()
-        else:
-            mutableString[i] = mutableString[i].upper()
-
-    return "".join(mutableString)
-
 def playLoseSequence(funny: bool=False):
     """ Displays the normal losing sequence when you die. """
     clearScreen()
@@ -98,22 +70,6 @@ def playLoseSequence(funny: bool=False):
         for k in range(0, 1000):
             print(spamGenerator(), end='')
 
-        # We need to flush so that all characters appear before clearing the
-        # screen.
-        stdout.flush()
-        sleep(0.1)
-
-    clearScreen()
-    for i in range(0, random.randint(5, 10)):
-        delayedPrint(garbleString("GAME OVER GAME OVER GAME OVER"), center=True)
-    delayedPrint()
-    delayedPrint(annoyingCase("All Your systems are belong to us"), center=True)
-    delayedPrint()
-    for i in range(0, random.randint(20, 40)):
-        delayedPrint(";;;;;;;;)))))", end='')
-    print()
-    delayedPrint()
-    awaitPlayer(center=True)
 
 class Fighter:
     """ Represents a fighter in a battle, complete with health, damage, and
@@ -286,11 +242,6 @@ def runGame():
     """ Initliazes and runs the game, interacting with the player. Returns when
         the player decides to leave or they fail/complete it. """
     while True:
-        currentTime = time_ns()
-        if currentTime >= loseTime:
-            playLoseSequence()
-            break
-
         if currentSystem.item is ItemType.RANSOMWARE:
             doRansomwareBattle(requiredItems, loseTime)
             # Once the battle is over, the player either won or lost, so the
