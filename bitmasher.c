@@ -795,8 +795,100 @@ static Map* map_generate(Inventory *const items) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Battle                                                                     //
+// Lose Sequence                                                              //
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Returns a random printable ASCII character.
+ */
+static char random_character(void) {
+    return 0x21 + (char)(rand() % (0x7E - 0x21));
+}
+
+/**
+ * Randomly replaces characters in the given string.
+ */
+static void garble_string(char *const string) {
+    assert(NULL != string);
+
+    for (char* c = string; '\0' != *c; ++c) {
+        if (0 == rand() % 5) *c = random_character();
+    }
+}
+
+/**
+ * Randomly upper/lower cases the characters in the given string.
+ */
+static void annoying_case_string(char *const string) {
+    assert(NULL != string);
+
+    for (char* c = string; '\0' != *c; ++c) {
+        if (0 == rand() % 2) {
+            *c = (char)toupper(*c);
+        } else {
+            *c = (char)tolower(*c);
+        }
+    }
+}
+
+/**
+ * Creates a mutable copy of the given string.
+ * @return caller must free().
+ */
+static char* string_copy_mutable(const char *const string) {
+    assert(NULL != string);
+
+    const size_t length = strlen(string);
+    char*        copy   = calloc(1 + length, 1);
+
+    if (NULL == copy) {
+        perror("ERROR: Failed to allocate memory for string copy\n");
+        exit(1);
+    }
+
+    (void)strcpy(copy, string);
+
+    return copy;
+}
+
+static void run_lose_sequence(void) {
+    clear();
+
+    for (size_t j = 0; j < 10; ++j) {
+        for (size_t i = 0; i < 1000; ++i) (void)putchar(random_character());
+        (void)fflush(stdout);
+        sleep_ns(100000000);
+    }
+
+    clear();
+
+    static const char *const text_1 = "GAME OVER GAME OVER GAME OVER";
+    char* text_copy = string_copy_mutable(text_1); // Must free().
+    for (size_t i = 0; i < 6; ++i) {
+        delayed_print(true, "%s", text_copy);
+        garble_string(text_copy);
+    }
+    delayed_print(true, "%s", text_copy);
+    free(text_copy);
+    text_copy = NULL;
+
+    delayed_print_newline();
+
+    static const char *const text_2 = "All Your systems are belong to us";
+    text_copy = string_copy_mutable(text_2); // must free().
+    annoying_case_string(text_copy);
+    delayed_print(true, "%s", text_copy);
+    free(text_copy);
+    text_copy = NULL;
+
+    for (size_t i = 0; i < 3; ++i) {
+        delayed_print(true, ";;;;;;;;)))))");
+    }
+
+    delayed_print_newline();
+
+    await_player(true);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Game                                                                       //
