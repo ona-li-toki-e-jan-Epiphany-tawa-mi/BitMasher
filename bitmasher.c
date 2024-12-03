@@ -132,9 +132,9 @@ static const Terminal* terminal_size(void) {
  * Sleeps for the specified number of nanoseconds.
  * @param nanoseconds - must be 0 <= nanoseconds < 1,000,000,000.
  */
-static void sleep_ns(long nanoseconds) {
+static void sleep_ns(const long nanoseconds) {
     assert(1000000000 > nanoseconds);
-    struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
+    const struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
     (void)nanosleep(&time, NULL);
 }
 
@@ -175,17 +175,17 @@ static void handle_stdin_error(void) {
  * @param center - whether to print the slice centered in terminal. Will print
  * the text without centering if the slice is larger than the width.
  */
-static void delayed_print_internal( bool center
-                                  , const char* slice
-                                  , size_t length
+static void delayed_print_internal( const bool        center
+                                  , const char *const slice
+                                  , const size_t      length
                                   ) {
     assert(NULL != slice);
 
     if (center) {
         const Terminal* terminal      = terminal_size();
-        size_t          remainder     = terminal->width - length;
-        size_t          left_padding  = remainder / 2;
-        size_t          right_padding = remainder - left_padding;
+        const size_t    remainder     = terminal->width - length;
+        const size_t    left_padding  = remainder / 2;
+        const size_t    right_padding = remainder - left_padding;
 
         if (length < terminal->width) {
             for (size_t i = 0; i < left_padding; ++i) (void)putchar(' ');
@@ -212,17 +212,19 @@ static void delayed_print_internal( bool center
  * @param center - whether to print the lines centered in the terminal.
  * @param format - like with the printf function family.
  */
-static void PRINTF_TYPECHECK(2, 3) delayed_print( bool center
-                                                 , const char* format
-                                                 , ...
-                                                 ) {
+static void PRINTF_TYPECHECK(2, 3) delayed_print( const bool        center
+                                                , const char* const format
+                                                , ...
+                                                ) {
     assert(NULL != format);
 
     // Use vsnprintf to handle the format string.
     static char buffer[DELAYED_PRINT_MAX_BUFFER_SIZE];
     va_list args;
     va_start(args, format);
-    int result = vsnprintf(buffer, DELAYED_PRINT_MAX_BUFFER_SIZE, format, args);
+    const int result = vsnprintf( buffer
+                                , DELAYED_PRINT_MAX_BUFFER_SIZE
+                                , format, args);
     if (0 > result) {
         (void)fprintf(stderr, "ERROR: "__FILE__":%s: failed to run vsnprintf: "
                               "%s\n", __func__, strerror(errno));
@@ -234,10 +236,10 @@ static void PRINTF_TYPECHECK(2, 3) delayed_print( bool center
     }
     va_end(args);
 
-    const Terminal* terminal = terminal_size();
-    const char*     start    = buffer;
-    const char*     end      = start;
-    size_t          length   = 0;
+    const Terminal *const terminal = terminal_size();
+    const char*           start    = buffer;
+    const char*           end      = start;
+    size_t                length   = 0;
 
     while ('\0' != *end) {
         ++length;
@@ -287,12 +289,12 @@ static void clear(void) {
  *
  * @param center - whether to center the notification to press enter.
  */
-static void await_player(bool center) {
+static void await_player(const bool center) {
     static const char *const message = "Press ENTER to continue";
     delayed_print(center, message);
 
     while (true) {
-        char input = (char)getchar();
+        const char input = (char)getchar();
         if (EOF == input) handle_stdin_error();
         if ('\n' == input) break;
     }
@@ -305,7 +307,7 @@ typedef struct {
     size_t count;
 } Selector;
 
-static void selector_add_option(Selector* selector, char option) {
+static void selector_add_option(Selector *const selector, const char option) {
     assert(NULL != selector);
     assert(!isspace(option));
 
@@ -326,7 +328,7 @@ static void selector_clear(Selector* selector) {
 }
 
 #define SELECTOR_GET_SELECTION_BUFFER_SIZE 50
-static char selector_get_selection(const Selector* selector) {
+static char selector_get_selection(const Selector *const selector) {
     assert(NULL != selector);
 
     if (0 == selector->count) return '\0';
@@ -380,7 +382,7 @@ typedef enum {
     ITEM_RANSOMWARE,
 } ItemType;
 
-static const char* item_type_name(ItemType type) {
+static const char* item_type_name(const ItemType type) {
     switch (type) {
     case ITEM_FULL_MEMORY_READ_ACCESS:  return "Full memory read access";
     case ITEM_FULL_MEMORY_WRITE_ACCESS: return "Full memory write access";
@@ -409,7 +411,7 @@ typedef struct {
     size_t count;
 } Inventory;
 
-static void inventory_add_item(Inventory* inventory, Item item) {
+static void inventory_add_item(Inventory *const inventory, const Item item) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == item.type) return;
@@ -427,16 +429,16 @@ static void inventory_add_item(Inventory* inventory, Item item) {
     }
 }
 
-static void inventory_try_remove_item( Inventory* inventory
-                                     , ItemType type
-                                     , size_t quantity
+static void inventory_try_remove_item( Inventory *const inventory
+                                     , const ItemType   type
+                                     , const size_t     quantity
                                      ) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == type) return;
 
     for (size_t i = 0; i < inventory->count; ++i) {
-        Item* item = &inventory->items[i];
+        Item *const item = &inventory->items[i];
         if (type != item->type) continue;
 
         if (quantity >= item->quantity) {
@@ -452,7 +454,7 @@ static void inventory_try_remove_item( Inventory* inventory
     }
 }
 
-static void inventory_clear(Inventory* inventory) {
+static void inventory_clear(Inventory *const inventory) {
     assert(NULL != inventory);
 
     inventory->count = 0;
@@ -471,7 +473,7 @@ typedef enum {
     DIRECTION_COUNT,
 } Direction;
 
-static Direction direction_opposite(Direction direction) {
+static Direction direction_opposite(const Direction direction) {
     switch (direction) {
     case DIRECTION_UP:    return DIRECTION_DOWN;
     case DIRECTION_DOWN:  return DIRECTION_UP;
@@ -481,8 +483,6 @@ static Direction direction_opposite(Direction direction) {
     case DIRECTION_COUNT:
     default: assert(false && "unreachable");
     }
-
-    exit(1);
 }
 
 // Zero-initalized.
@@ -494,7 +494,7 @@ typedef enum {
     SCAN_ERROR,
 } ScanResult;
 
-static const char* scan_result_name(ScanResult scan) {
+static const char* scan_result_name(const ScanResult scan) {
     switch (scan) {
     case SCAN_NONE: return "";
 
@@ -505,8 +505,6 @@ static const char* scan_result_name(ScanResult scan) {
 
     default: assert(false && "unreachable");
     }
-
-    exit(1);
 }
 
 typedef enum {
@@ -532,7 +530,7 @@ typedef enum {
     SYSTEM_BOOTLOADER,
 } SystemType;
 
-static const char* system_type_name(SystemType type) {
+static const char* system_type_name(const SystemType type) {
     switch (type) {
     case SYSTEM_BOOTLOADER:
         return "The Bootloader";
@@ -570,8 +568,6 @@ static const char* system_type_name(SystemType type) {
     case SYSTEM_TYPE_COUNT:
     default: assert(false && "unreachable");
     }
-
-    exit(1);
 }
 
 // Zero-initialized.
@@ -584,7 +580,7 @@ struct System {
     System* adjacent[DIRECTION_COUNT];
 };
 
-static void system_try_scan(System* system, bool can_fail) {
+static void system_try_scan(System *const system, const bool can_fail) {
     assert(NULL != system);
 
     if (can_fail && SCAN_FAIL_CHANCE > rand() % 100) {
@@ -628,24 +624,24 @@ typedef struct {
     size_t count;
 } Map;
 
-static System* map_alloc_system(Map* map) {
+static System* map_alloc_system(Map *const map) {
     assert(NULL != map);
     assert(MAP_MAX_COUNT > map->count);
 
     return &map->systems[map->count++];
 }
 
-static bool map_try_place_system( Map* map
-                                , SystemType system
-                                , ItemType item
-                                , size_t* steps_taken
+static bool map_try_place_system( Map *const       map
+                                , const SystemType system
+                                , const ItemType   item
+                                , size_t *const    steps_taken
                                 ) {
     assert(NULL != map);
     assert(0 < map->count);
     assert(NULL != steps_taken);
 
-    System* previous_system = NULL;
-    System* traverser       = &map->systems[0];
+    const System* previous_system = NULL;
+    System*       traverser       = &map->systems[0];
 
     // Traverse map and a system to it.
     for (size_t steps_left = MAX_STEPS; 0 < steps_left; --steps_left) {
@@ -683,11 +679,11 @@ static bool map_try_place_system( Map* map
             }
             if (0 == directions_count) continue;
 
-            System* next_system = map_alloc_system(map);
-            next_system->type   = system;
-            next_system->item   = item;
+            System *const next_system = map_alloc_system(map);
+            next_system->type         = system;
+            next_system->item         = item;
 
-            Direction direction
+            const Direction direction
                 = directions[(size_t)rand() % directions_count];
             traverser->adjacent[direction] = next_system;
             next_system->adjacent[direction_opposite(direction)]
@@ -700,22 +696,21 @@ static bool map_try_place_system( Map* map
     return false;
 }
 
-static Map* map_generate(Inventory* items) {
+static Map* map_generate(Inventory *const items) {
     assert(NULL != items);
 
-    Map* map = calloc(1, sizeof(Map));
+    Map *const map = calloc(1, sizeof(Map));
     if (NULL == map) {
         perror("Unable to allocate memory for map generation");
         exit(1);
     }
-
     // Map root node.
-    System* root_node = map_alloc_system(map);
-    root_node->type   = SYSTEM_BOOTLOADER;
-    root_node->item   = ITEM_NONE;
+    System *const root_node = map_alloc_system(map);
+    root_node->type         = SYSTEM_BOOTLOADER;
+    root_node->item         = ITEM_NONE;
 
-    size_t    expected_item_count = items->count;
-    Inventory item_pool           = *items;
+    const size_t expected_item_count = items->count;
+    Inventory    item_pool           = *items;
     // Clear the source items inventory so we can add back only the ones that
     // were placed on the map.
     inventory_clear(items);
@@ -748,10 +743,11 @@ static Map* map_generate(Inventory* items) {
             break;
         }
 
-        bool placed_item = map_try_place_system( map
-                                               , system_pool[next_system_index]
-                                               , item_pool.items[0].type
-                                               , &steps_taken);
+        const bool placed_item =
+            map_try_place_system( map
+                                , system_pool[next_system_index]
+                                , item_pool.items[0].type
+                                , &steps_taken);
 
         if (placed_item) {
             ++systems_generated;
@@ -790,6 +786,7 @@ static Map* map_generate(Inventory* items) {
                               "total for generation\n", systems_generated);
     }
 
+    // TODO remove?
     (void)fprintf(stderr, "INFO: Map generator statistics:\n");
     (void)fprintf(stderr, "      Total traverser steps - %zu\n", steps_taken);
     (void)fprintf(stderr, "      Systems generated - %zu\n", systems_generated);
@@ -805,7 +802,7 @@ static Map* map_generate(Inventory* items) {
 // Game                                                                       //
 ////////////////////////////////////////////////////////////////////////////////
 
-static void generate_required_items(Inventory* inventory) {
+static void generate_required_items(Inventory *const inventory) {
     assert(NULL != inventory);
 
     inventory_add_item(inventory, (Item) {
@@ -840,15 +837,15 @@ static void generate_required_items(Inventory* inventory) {
     // Shuffle items.
     // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
     for (size_t i = 0; i < inventory->count; ++i) {
-        size_t j = i + (size_t)rand() % (inventory->count - i);
-        Item item           = inventory->items[i];
+        const size_t j      = i + (size_t)rand() % (inventory->count - i);
+        const Item item     = inventory->items[i];
         inventory->items[i] = inventory->items[j];
         inventory->items[j] = item;
     }
 }
 
-static void display_inventory( const Inventory* inventory
-                             , const Inventory* required_items
+static void display_inventory( const Inventory *const inventory
+                             , const Inventory *const required_items
                              ) {
     assert(NULL != inventory);
     assert(NULL != required_items);
@@ -860,7 +857,7 @@ static void display_inventory( const Inventory* inventory
         delayed_print(true, "Empty...");
     } else {
         for (size_t i = 0; i < inventory->count; ++i) {
-            const Item* item = &inventory->items[i];
+            const Item *const item = &inventory->items[i];
             delayed_print(true, "- %s: %zu", item_type_name(item->type)
                               , item->quantity);
         }
@@ -873,7 +870,7 @@ static void display_inventory( const Inventory* inventory
         delayed_print(true, "Everything needed has been found...");
     } else {
         for (size_t i = 0; i < required_items->count; ++i) {
-            const Item* item = &required_items->items[i];
+            const Item *const item = &required_items->items[i];
             delayed_print(true, "- %s: %zu", item_type_name(item->type)
                               , item->quantity);
         }
@@ -888,7 +885,7 @@ static void run_game(void) {
     generate_required_items(&required_items);
     Map* map = map_generate(&required_items);
 
-    long lose_time = get_time_s() + (long)required_items.count
+    const long lose_time = get_time_s() + (long)required_items.count
         * SECONDS_PER_SYSTEM;
 
     Inventory inventory = {0};
@@ -898,7 +895,7 @@ static void run_game(void) {
 
     bool game_running = true;
     while (game_running) {
-        long current_time = get_time_s();
+        const long current_time = get_time_s();
         // TODO check time.
 
         // TODO handle ransomware.
@@ -924,7 +921,7 @@ static void run_game(void) {
         // TODO see if can be simplified.
         // Adds possible directions to move in.
         for (Direction direction = 0; direction < DIRECTION_COUNT; ++direction) {
-            System* system = current_system->adjacent[direction];
+            const System *const system = current_system->adjacent[direction];
             if (NULL == system) continue;
 
             switch (direction) {
@@ -994,7 +991,7 @@ static void run_game(void) {
         delayed_print(false, "(E)XIT game");
         selector_add_option(&game_menu, 'e');
 
-        char choice = selector_get_selection(&game_menu);
+        const char choice = selector_get_selection(&game_menu);
         switch (choice) {
         case 'u': {
             current_system = current_system->adjacent[DIRECTION_UP];
@@ -1027,7 +1024,7 @@ static void run_game(void) {
                 ; direction < DIRECTION_COUNT
                 ; ++direction
                 ) {
-                System* adjacent = current_system->adjacent[direction];
+                System *const adjacent = current_system->adjacent[direction];
                 if (NULL != adjacent) system_try_scan(adjacent, true);
             }
         } break;
@@ -1048,7 +1045,7 @@ static void run_game(void) {
 // Main Menu                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
 
-static const char* logo[] = {
+static const char *const logo[] = {
     " ______  __________________ _______  _______  _______           _______  _______ ",
     "(  ___ \\ \\__   __/\\__   __/(       )(  ___  )(  ____ \\|\\     /|(  ____ \\(  ____ )",
     "| (   ) )   ) (      ) (   | () () || (   ) || (    \\/| )   ( || (    \\/| (    )|",
@@ -1059,7 +1056,7 @@ static const char* logo[] = {
     "|/ \\___/ \\_______/   )_(   |/     \\||/     \\|\\_______)|/     \\|(_______/|/   \\__/"
 };
 
-static const char* version = "V6.327438247";
+static const char *const version = "V6.327438247";
 
 static void run_instructions_menu(void) {
     clear();
@@ -1196,12 +1193,12 @@ static void run_start_menu(void) {
         delayed_print(true, "(A)BOUT");
         delayed_print(true, "(L)ICENSE");
         delayed_print(true, "(E)XIT");
-        char choice = selector_get_selection(&start_menu);
+        const char choice = selector_get_selection(&start_menu);
         switch (choice) {
         case 'p': return;
         case 'i': run_instructions_menu(); break;
         case 'a': run_about_menu();        break;
-        case 'l': run_license_menu();     break;
+        case 'l': run_license_menu();      break;
         case 'e': run_exit_sequence();     break;
         default:  assert(false && "unreachable");
         }
