@@ -156,7 +156,7 @@ static const Terminal* terminal_size(void) {
 static void sleep_ns(const long nanoseconds) {
     assert(1000000000 > nanoseconds);
     const struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
-    (void)nanosleep(&time, NULL);
+    nanosleep(&time, NULL);
 }
 
 static long get_time_s(void) {
@@ -180,10 +180,10 @@ static long get_time_s(void) {
  */
 static void handle_stdin_error(void) {
     if (0 != feof(stdin)) {
-        (void)fprintf(stderr, "ERROR: encountered EOF reading stdin\n");
+        fprintf(stderr, "ERROR: encountered EOF reading stdin\n");
         exit(1);
     } else if (0 != ferror(stdin)) {
-        (void)fprintf(stderr, "ERROR: encountered error reading stdin\n");
+        fprintf(stderr, "ERROR: encountered error reading stdin\n");
         exit(1);
     }
 }
@@ -209,19 +209,19 @@ static void delayed_print_internal( const bool        center
         const size_t    right_padding = remainder - left_padding;
 
         if (length < terminal->width) {
-            for (size_t i = 0; i < left_padding; ++i) (void)putchar(' ');
+            for (size_t i = 0; i < left_padding; ++i) putchar(' ');
         }
-        for (size_t i = 0; i < length; ++i) (void)putchar(slice[i]);
+        for (size_t i = 0; i < length; ++i) putchar(slice[i]);
         if (length < terminal->width) {
-            for (size_t i = 0; i < right_padding; ++i) (void)putchar(' ');
+            for (size_t i = 0; i < right_padding; ++i) putchar(' ');
         }
 
     } else {
-        for (size_t i = 0; i < length; ++i) (void)putchar(slice[i]);
-        (void)putchar('\n');
+        for (size_t i = 0; i < length; ++i) putchar(slice[i]);
+        putchar('\n');
     }
 
-    (void)fflush(stdout);
+    fflush(stdout);
     sleep_ns(DELAYED_PRINT_DELAY_NS);
 }
 
@@ -247,13 +247,12 @@ static void PRINTF_TYPECHECK(2, 3) delayed_print( const bool        center
                                 , DELAYED_PRINT_MAX_BUFFER_SIZE
                                 , format, args);
     if (0 > result) {
-        (void)fprintf(stderr, "ERROR: "__FILE__":%s: failed to run vsnprintf: "
-                              "%s\n", __func__, strerror(errno));
+        fprintf(stderr, "ERROR: "__FILE__":%s: failed to run vsnprintf: %s\n"
+                      , __func__, strerror(errno));
         exit(1);
     } else if (result >= DELAYED_PRINT_MAX_BUFFER_SIZE) {
-        (void)fprintf(stderr, "WARN: "__FILE__":%s: output truncated when "
-                              "running vsnprintf with format '%s'\n", __func__
-                            , format);
+        fprintf(stderr, "WARN: "__FILE__":%s: output truncated when running "
+                        "vsnprintf with format '%s'\n", __func__, format);
     }
     va_end(args);
 
@@ -268,7 +267,7 @@ static void PRINTF_TYPECHECK(2, 3) delayed_print( const bool        center
         // If newline, output slice.
         if ('\n' == *end) {
             delayed_print_internal(center, start, length - 1);
-            (void)putchar('\n');
+            putchar('\n');
             start  = end + 1;
             end    = start;
             length = 0;
@@ -301,7 +300,7 @@ static void delayed_print_newline(void) {
 static void clear(void) {
     // \x1B[2J - clears screen.
     // \x1B[H  - returns cursor to home position.
-    (void)fputs("\x1B[2J\x1B[H", stdout);
+    fputs("\x1B[2J\x1B[H", stdout);
 }
 
 /**
@@ -361,7 +360,7 @@ static char selector_get_selection(const Selector *const selector) {
         }
 
         char selection = '\0';
-        for (char* c = buffer; '\0' != *c; ++c)
+        for (const char* c = buffer; '\0' != *c; ++c)
             if (!isspace(*c)) {
                 selection = *c;
                 break;
@@ -376,7 +375,7 @@ static char selector_get_selection(const Selector *const selector) {
                 break;
             }
         if (!valid_selection) {
-            (void)printf("ERROR: invalid option '%c'!\n", selection);
+            printf("ERROR: invalid option '%c'!\n", selection);
             continue;
         }
 
@@ -812,24 +811,23 @@ static Map* map_generate(Inventory *const items) {
                              , ITEM_RANSOMWARE
                              , &steps_taken)
                              ) {
-        (void)fprintf(stderr, "ERROR: Unable to place ransomware on the map\n");
+        fprintf(stderr, "ERROR: Unable to place ransomware on the map\n");
         exit(1);
     }
     ++systems_generated;
 
     // Warning for partial map generation.
     if (expected_item_count != items->count) {
-        (void)fprintf(stderr, "WARN: Unable to generate enough systems\n");
-        (void)fprintf(stderr, "      Could only place %zu items from a pool of "
-                              "%zu\n", items->count, expected_item_count);
-        (void)fprintf(stderr, "      There are only %zu systems avalible in "
-                              "total for generation\n", systems_generated);
+        fprintf(stderr, "WARN: Unable to generate enough systems\n");
+        fprintf(stderr, "      Could only place %zu items from a pool of %zu\n"
+                      , items->count, expected_item_count);
+        fprintf(stderr, "      There are only %zu systems avalible in total "
+                        "for generation\n", systems_generated);
     }
 
-    // TODO remove?
-    (void)fprintf(stderr, "INFO: Map generator statistics:\n");
-    (void)fprintf(stderr, "      Total traverser steps - %zu\n", steps_taken);
-    (void)fprintf(stderr, "      Systems generated - %zu\n", systems_generated);
+    fprintf(stderr, "INFO: Map generator statistics:\n");
+    fprintf(stderr, "      Total traverser steps - %zu\n", steps_taken);
+    fprintf(stderr, "      Systems generated - %zu\n", systems_generated);
 
     return map;
 }
@@ -886,7 +884,7 @@ static char* string_copy_mutable(const char *const string) {
         exit(1);
     }
 
-    (void)strcpy(copy, string);
+    strcpy(copy, string);
 
     return copy;
 }
@@ -896,14 +894,14 @@ static void run_lose_sequence(const bool funny) {
 
     if (funny) {
         for (size_t j = 0; j < 10; ++j) {
-            for (size_t i = 0; i < 500; ++i) (void)fputs(";)", stdout);
-            (void)fflush(stdout);
+            for (size_t i = 0; i < 500; ++i) fputs(";)", stdout);
+            fflush(stdout);
             sleep_ns(100000000);
         }
     } else {
         for (size_t j = 0; j < 10; ++j) {
-            for (size_t i = 0; i < 1000; ++i) (void)putchar(random_character());
-            (void)fflush(stdout);
+            for (size_t i = 0; i < 1000; ++i) putchar(random_character());
+            fflush(stdout);
             sleep_ns(100000000);
         }
     }
@@ -1490,16 +1488,16 @@ static void run_license_menu(void) {
 }
 
 static void run_exit_sequence(void) {
-    (void)printf("EXITing");
-    (void)fflush(stdout);
+    printf("EXITing");
+    fflush(stdout);
     sleep_ns(DELAYED_PRINT_DELAY_NS);
-    (void)printf(".");
-    (void)fflush(stdout);
+    printf(".");
+    fflush(stdout);
     sleep_ns(DELAYED_PRINT_DELAY_NS);
-    (void)printf(".");
-    (void)fflush(stdout);
+    printf(".");
+    fflush(stdout);
     sleep_ns(DELAYED_PRINT_DELAY_NS);
-    (void)printf(".\n");
+    printf(".\n");
 
     exit(0);
 }
@@ -1544,7 +1542,7 @@ static void run_start_menu(void) {
 
 int main(void) {
     if (!isatty(STDOUT_FILENO)) {
-        (void)fprintf(stderr, "ERROR: stdout is not a terminal\n");
+        fprintf(stderr, "ERROR: stdout is not a terminal\n");
         return 1;
     }
 
