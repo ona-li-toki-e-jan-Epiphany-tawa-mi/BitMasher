@@ -66,6 +66,22 @@
 // a new one, given as a number between 0 and 100. Make larger for spikier maps.
 #define MOVE_CHANCE 70
 
+
+// Amount of time, in nanoseconds, it takes for a move to happen in the battle.
+#define BATTLE_MOVE_DELAY 700000000L
+// Base health for all fighters.
+#define FIGHTER_BASE_HEALTH 50
+// Addtional health points the RANSOMWARE gets per missing code fragment.
+#define CODE_FRAGMENT_HEALTH_BOOST 25
+// Base damage for all fighters.
+#define FIGHTER_BASE_DAMAGE 10
+// Additional damage points the player gets. Must be larger than or equal to 0
+// for the player to win whatsoever.
+#define PLAYER_DAMAGE_BOOST 5
+// Damage boost the RANSOMWARE gets per missing vulnerability.
+#define VULNERABILITY_DAMAGE_BOOST 10
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
@@ -370,8 +386,8 @@ static char selector_get_selection(const Selector *const selector) {
 // Zero-initalized.
 typedef enum {
     ITEM_NONE = 0,
-    ITEM_FULL_MEMORY_READ_ACCESS,
-    ITEM_FULL_MEMORY_WRITE_ACCESS,
+    ITEM_MEMORY_READ_ACCESS,
+    ITEM_MEMORY_WRITE_ACCESS,
     ITEM_POINTER_DEREFERENCER,
     ITEM_OS_OVERRIDE_CAPABILITY,
     ITEM_RANSOMWARE_CODE_FRAGMENT,
@@ -384,8 +400,8 @@ typedef enum {
 
 static const char* item_type_name(const ItemType type) {
     switch (type) {
-    case ITEM_FULL_MEMORY_READ_ACCESS:  return "Full memory read access";
-    case ITEM_FULL_MEMORY_WRITE_ACCESS: return "Full memory write access";
+    case ITEM_MEMORY_READ_ACCESS:       return "Full memory read access";
+    case ITEM_MEMORY_WRITE_ACCESS:      return "Full memory write access";
     case ITEM_POINTER_DEREFERENCER:     return "Pointer dereferencer";
     case ITEM_OS_OVERRIDE_CAPABILITY:   return "OS override capability";
     case ITEM_RANSOMWARE_CODE_FRAGMENT: return "RANSOMWARE code fragment";
@@ -458,6 +474,19 @@ static void inventory_clear(Inventory *const inventory) {
     assert(NULL != inventory);
 
     inventory->count = 0;
+}
+
+static size_t inventory_count_item( const Inventory *const inventory
+                                  , const ItemType         type
+                                  ) {
+    assert(NULL != inventory);
+
+    for (size_t item = 0; item < inventory->count; ++item)
+        if (type == inventory->items[item].type) {
+            return inventory->items[item].quantity;
+        }
+
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -597,8 +626,8 @@ static void system_try_scan(System *const system, const bool can_fail) {
         system->scan_result = SCAN_EMPTY;
     } return;
 
-    case ITEM_FULL_MEMORY_READ_ACCESS:
-    case ITEM_FULL_MEMORY_WRITE_ACCESS:
+    case ITEM_MEMORY_READ_ACCESS:
+    case ITEM_MEMORY_WRITE_ACCESS:
     case ITEM_POINTER_DEREFERENCER:
     case ITEM_OS_OVERRIDE_CAPABILITY:
     case ITEM_RANSOMWARE_CODE_FRAGMENT:
@@ -857,13 +886,21 @@ static char* string_copy_mutable(const char *const string) {
     return copy;
 }
 
-static void run_lose_sequence(void) {
+static void run_lose_sequence(const bool funny) {
     clear();
 
-    for (size_t j = 0; j < 10; ++j) {
-        for (size_t i = 0; i < 1000; ++i) (void)putchar(random_character());
-        (void)fflush(stdout);
-        sleep_ns(100000000);
+    if (funny) {
+        for (size_t j = 0; j < 10; ++j) {
+            for (size_t i = 0; i < 500; ++i) (void)fputs(";)", stdout);
+            (void)fflush(stdout);
+            sleep_ns(100000000);
+        }
+    } else {
+        for (size_t j = 0; j < 10; ++j) {
+            for (size_t i = 0; i < 1000; ++i) (void)putchar(random_character());
+            (void)fflush(stdout);
+            sleep_ns(100000000);
+        }
     }
 
     clear();
@@ -887,6 +924,8 @@ static void run_lose_sequence(void) {
     free(text_copy);
     text_copy = NULL;
 
+    delayed_print_newline();
+
     for (size_t i = 0; i < 3; ++i) {
         delayed_print(true, ";;;;;;;;)))))");
     }
@@ -897,6 +936,195 @@ static void run_lose_sequence(void) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Battle                                                                     //
+////////////////////////////////////////////////////////////////////////////////
+
+// Represents a fighter in a battle, complete with health, damage, and digital
+// bloodlust
+typedef struct {
+    const char* name;
+    int         health;
+    int         damage;
+} Fighter;
+
+// printf format for Fighter.
+#define FIGHTER_FMT "%s: %d hp, %d dmg"
+// printf argument destructurizer for Fighter. Pass by pointer.
+#define FIGHTER_ARG(fighter) (fighter)->name, (fighter)->health, (fighter)->damage
+
+static int fighter_attack( const Fighter *const attacker
+                         , Fighter *const       victim
+                         ) {
+    assert(NULL != attacker);
+    assert(NULL != victim);
+
+    victim->health -= attacker->damage;
+    return attacker->damage;
+}
+
+static void run_boss_battle_intro(void) {
+    clear();
+
+    delayed_print(true, "The RANSOMWARE");
+    delayed_print_newline();
+    delayed_print(true, "You have located the RANSOMWARE infecting the "
+                        "computer");
+    delayed_print(true, "EXTRACT it from the system as soon as possible");
+    delayed_print(true, "There is no other option");
+    delayed_print_newline();
+
+    await_player(true);
+}
+
+static void run_boss_battle( const Inventory *const remaining_items
+                           , const long lose_time
+                           ) {
+    assert(NULL != remaining_items);
+
+    run_boss_battle_intro();
+
+    const bool can_alter_memory =
+        0 == inventory_count_item(remaining_items, ITEM_MEMORY_READ_ACCESS)
+     && 0 == inventory_count_item(remaining_items, ITEM_MEMORY_WRITE_ACCESS);
+    const bool has_admin_privileges =
+        0 == inventory_count_item(remaining_items, ITEM_OS_OVERRIDE_CAPABILITY);
+    const bool has_dereferencer =
+        0 == inventory_count_item(remaining_items, ITEM_POINTER_DEREFERENCER);
+    const bool has_sandboxer =
+        0 == inventory_count_item(remaining_items, ITEM_SANDBOXER);
+
+    Fighter player = (Fighter) {
+        .name   = "You",
+        .health = FIGHTER_BASE_HEALTH,
+        .damage = FIGHTER_BASE_DAMAGE + PLAYER_DAMAGE_BOOST,
+    };
+    Fighter ransomware = (Fighter) {
+        .name   = "The RANSOMWARE",
+        .health = FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST
+                * (int)inventory_count_item( remaining_items
+                                           , ITEM_RANSOMWARE_CODE_FRAGMENT),
+        .damage = FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST
+                * (int)inventory_count_item( remaining_items
+                                           , ITEM_VULNERABILITY),
+    };
+
+    Selector fight_menu = {0};
+    selector_add_option(&fight_menu, 'x'); // E(X)TRACT.
+    selector_add_option(&fight_menu, 'n'); // Do (N)OTHING.
+    selector_add_option(&fight_menu, 'd'); // Do a funny (D)ANCE.
+    selector_add_option(&fight_menu, 'e'); // (E)XIT game.
+
+    while (true) {
+        const long current_time = get_time_s();
+        if (!has_sandboxer && current_time >= lose_time) {
+            run_lose_sequence(false);
+            return;
+        }
+
+        clear();
+        delayed_print(true, "The RANSOMEWARE");
+        if (!has_sandboxer) {
+            delayed_print(true, "Time left: %ld second(s)"
+                              , lose_time - current_time);
+        }
+        delayed_print_newline();
+        delayed_print(false, FIGHTER_FMT, FIGHTER_ARG(&player));
+        delayed_print(false, FIGHTER_FMT, FIGHTER_ARG(&ransomware));
+        delayed_print_newline();
+        delayed_print(false, "E(X)TRACT");
+        delayed_print(false, "Do (N)OTHING");
+        delayed_print(false, "Do a funny (D)ANCE");
+        delayed_print(false, "(E)XIT game");
+
+        const char choice = selector_get_selection(&fight_menu);
+        switch (choice) {
+        case 'x': {
+            sleep_ns(BATTLE_MOVE_DELAY);
+            delayed_print_newline();
+            delayed_print(false, "You attempt to EXTRACT the RANSOMWARE...");
+            sleep_ns(BATTLE_MOVE_DELAY);
+
+            if (!has_dereferencer) {
+                delayed_print(false, "Unable to locate relavent memory to "
+                                     "alter; you lack the capabilities");
+            } else if (!can_alter_memory) {
+                delayed_print(false, "Unable to alter relavent memory; you "
+                                     "lack the capabilities");
+            } else if (!has_admin_privileges) {
+                delayed_print(false, "Memory alteration denied; you lack "
+                                     "sufficent privileges");
+            } else {
+                const int damage = fighter_attack(&player, &ransomware);
+                delayed_print(false, "You complete partial code EXTRACTion, "
+                                     "dealing %d dmg (%d hp remaining)", damage
+                                   , ransomware.health);
+
+                if (0 >= ransomware.health) {
+                    sleep_ns(BATTLE_MOVE_DELAY);
+                    clear();
+                    delayed_print(true, "Congratulations");
+                    delayed_print_newline();
+                    delayed_print(true, "You have successfully EXTRACTed the "
+                                        "RANSOMWARE");
+                    delayed_print_newline();
+                    await_player(true);
+                }
+            }
+        } break;
+
+        case 'n': {
+            sleep_ns(BATTLE_MOVE_DELAY);
+            delayed_print_newline();
+            delayed_print(false, "You do absolutely NOTHING...");
+        } break;
+
+        case 'd': {
+            sleep_ns(BATTLE_MOVE_DELAY);
+            delayed_print_newline();
+            delayed_print(false, "You attempt a funny DANCE...");
+            sleep_ns(BATTLE_MOVE_DELAY);
+            delayed_print(false, "You are an antivirus, you have no means to "
+                                 "DANCE");
+            sleep_ns(BATTLE_MOVE_DELAY);
+            const int damage = fighter_attack(&player, &player);
+            delayed_print(false, "In the process you corrupted your own data, "
+                                 "dealing %d dmg (%d hp remaining)", damage
+                               , player.health);
+            sleep_ns(BATTLE_MOVE_DELAY);
+
+            if (0 >= player.health) {
+                sleep_ns(BATTLE_MOVE_DELAY);
+                run_lose_sequence(true);
+                return;
+            }
+        } break;
+
+        case 'e': return;
+
+        default: assert(false && "unreachable");
+        }
+
+        // RANSOMWARE attack sequence.
+        sleep_ns(BATTLE_MOVE_DELAY);
+        delayed_print_newline();
+        delayed_print(false, "The RANSOMWARE attempts to deliver a payload...");
+        sleep_ns(BATTLE_MOVE_DELAY);
+        const int damage = fighter_attack(&ransomware, &player);
+        delayed_print(false, "You were hit with a viral payload, dealing %d "
+                             "dmg (%d hp remaining)", damage, player.health);
+
+        if (0 >= player.health) {
+            sleep_ns(BATTLE_MOVE_DELAY);
+            run_lose_sequence(false);
+            return;
+        }
+
+        sleep_ns(BATTLE_MOVE_DELAY);
+        await_player(false);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Game                                                                       //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -904,31 +1132,31 @@ static void generate_required_items(Inventory *const inventory) {
     assert(NULL != inventory);
 
     inventory_add_item(inventory, (Item) {
-        .type = ITEM_FULL_MEMORY_READ_ACCESS,
+        .type     = ITEM_MEMORY_READ_ACCESS,
         .quantity = 1
     });
     inventory_add_item(inventory, (Item) {
-        .type = ITEM_FULL_MEMORY_WRITE_ACCESS,
+        .type     = ITEM_MEMORY_WRITE_ACCESS,
         .quantity = 1
     });
     inventory_add_item(inventory, (Item) {
-        .type = ITEM_POINTER_DEREFERENCER,
+        .type     = ITEM_POINTER_DEREFERENCER,
         .quantity = 1
     });
     inventory_add_item(inventory, (Item) {
-        .type = ITEM_OS_OVERRIDE_CAPABILITY,
+        .type     = ITEM_OS_OVERRIDE_CAPABILITY,
         .quantity = 1
     });
     inventory_add_item(inventory, (Item) {
-        .type = ITEM_SANDBOXER,
+        .type     = ITEM_SANDBOXER,
         .quantity = 1
     });
     inventory_add_item(inventory, (Item) {
-        .type = ITEM_RANSOMWARE_CODE_FRAGMENT,
+        .type     = ITEM_RANSOMWARE_CODE_FRAGMENT,
         .quantity = 1 + (size_t)rand() % 3
     });
     inventory_add_item(inventory, (Item) {
-        .type = ITEM_VULNERABILITY,
+        .type     = ITEM_VULNERABILITY,
         .quantity = 1 + (size_t)rand() % 3
     });
 
@@ -995,12 +1223,14 @@ static void run_game(void) {
     while (game_running) {
         const long current_time = get_time_s();
         if (current_time >= lose_time) {
-            run_lose_sequence();
-            game_running = false;
-            break;
+            run_lose_sequence(false);
+            goto lend_game;
         }
 
-        // TODO handle ransomware.
+        if (ITEM_RANSOMWARE == current_system->item) {
+            run_boss_battle(&required_items, lose_time);
+            goto lend_game;
+        }
 
         // Scan the current system if the user moved into an unscanned room.
         system_try_scan(current_system, false);
@@ -1020,7 +1250,6 @@ static void run_game(void) {
 
         selector_clear(&game_menu);
 
-        // TODO see if can be simplified.
         // Adds possible directions to move in.
         for (Direction direction = 0; direction < DIRECTION_COUNT; ++direction) {
             const System *const system = current_system->adjacent[direction];
@@ -1133,11 +1362,12 @@ static void run_game(void) {
 
         case 'i': display_inventory(&inventory, &required_items); break;
 
-        case 'e': game_running = false; break;
+        case 'e': goto lend_game;
 
         default: assert(false && "unreachable");
         }
     }
+ lend_game:
 
     free(map);
     map = NULL;
