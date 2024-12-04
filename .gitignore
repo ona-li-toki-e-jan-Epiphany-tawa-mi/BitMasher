@@ -1,5 +1,2 @@
-# mypy
-.mypy-cache
-
-# Nix.
-flake.lock
+# Build artifacts.
+bitmasher
