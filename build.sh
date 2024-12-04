@@ -5,7 +5,8 @@ set -u
 
 CC="${CC:-cc}"
 CFLAGS="${CFLAGS:--Wall -Wextra -Wpedantic -Wconversion -Wswitch-enum}"
-ALL_CFLAGS="$CFLAGS -std=c11"
+EXTRA_CFLAGS="${EXTRA_CFLAGS:-}"
+ALL_CFLAGS="$CFLAGS $EXTRA_CFLAGS -std=c11"
 
 set -x
 # shellcheck disable=SC2086 # We want $ALL_CFLAGS to wordsplit.

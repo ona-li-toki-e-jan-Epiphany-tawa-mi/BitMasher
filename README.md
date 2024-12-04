@@ -18,13 +18,25 @@ of a RANSOMWARE attack.
 
 Dependencies:
 
-- A C compiler supporting c11.
+- A C compiler supporting c11. Clang or GCC recommended.
 - POSIX system.
 
 Then, run the following command(s):
 
-```
+```sh
 ./build.sh
+```
+
+To enable optimizations, you can add one or more of the following arguments to
+the EXTRA_CFLAGS enviroment variable:
+
+- `-O3` - general optimizations.
+- `-DNDEBUG -Wno-return-type` - disable safety checks. Performance > safety.
+
+I.e.:
+
+```sh
+EXTRA_CFLAGS='-O3 -DNDEBUG -Wno-return-type' ./build.sh
 ```
 
 The executable will be named `bitmasher`.
