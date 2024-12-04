@@ -502,6 +502,8 @@ static size_t inventory_count_item( const Inventory *const inventory
                                   ) {
     assert(NULL != inventory);
 
+    if (ITEM_NONE == type) return 0;
+
     for (size_t item = 0; item < inventory->count; ++item)
         if (type == inventory->items[item].type) {
             return inventory->items[item].quantity;
