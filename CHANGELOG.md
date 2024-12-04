@@ -3,6 +3,7 @@
 ## Upcoming
 
 - Rewrote in C for funsies.
+- Now restores terminal state on shutdown.
 
 ## 6.327438247
 

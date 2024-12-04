@@ -1498,17 +1498,18 @@ static void run_exit_sequence(void) {
     fflush(stdout);
     sleep_ns(DELAYED_PRINT_DELAY_NS);
     printf(".\n");
-
-    exit(0);
 }
 
-static void run_start_menu(void) {
+/**
+ * @return true if the user chose to exit the game.
+ */
+static bool run_start_menu(void) {
     Selector start_menu = {0};
-    selector_add_option(&start_menu, 'p'); // (P)LAY
-    selector_add_option(&start_menu, 'i'); // (I)NSTRUCTIONS
-    selector_add_option(&start_menu, 'a'); // (A)BOUT
-    selector_add_option(&start_menu, 'l'); // (L)ICENSE
-    selector_add_option(&start_menu, 'e'); // (E)XIT
+    selector_add_option(&start_menu, 'p'); // (P)LAY.
+    selector_add_option(&start_menu, 'i'); // (I)NSTRUCTIONS.
+    selector_add_option(&start_menu, 'a'); // (A)BOUT.
+    selector_add_option(&start_menu, 'l'); // (L)ICENSE.
+    selector_add_option(&start_menu, 'e'); // (E)XIT.
 
     while (true) {
         clear();
@@ -1522,22 +1523,35 @@ static void run_start_menu(void) {
         delayed_print(true, "Type and enter the character in paranthesis to "
                             "select an option.");
         delayed_print_newline();
-
         delayed_print(true, "(P)LAY");
         delayed_print(true, "(I)NSTRUCTIONS");
         delayed_print(true, "(A)BOUT");
         delayed_print(true, "(L)ICENSE");
         delayed_print(true, "(E)XIT");
+
         const char choice = selector_get_selection(&start_menu);
         switch (choice) {
-        case 'p': return;
+        case 'p': return false;
+
         case 'i': run_instructions_menu(); break;
         case 'a': run_about_menu();        break;
         case 'l': run_license_menu();      break;
-        case 'e': run_exit_sequence();     break;
+
+        case 'e': {
+            run_exit_sequence();
+        } return true;
+
         default:  assert(false && "unreachable");
         }
     }
+}
+
+static void on_exit(void) {
+    // Restores terminal state.
+    // \x1B[?1049l - Disable alternative buffer.
+    // \x1B[?47l   - Restore screen.
+    // \x1B[u      - Restore cursor position.
+    printf("\x1B[?1049l\x1B[?47l\x1B[u");
 }
 
 int main(void) {
@@ -1549,11 +1563,20 @@ int main(void) {
     // Seed random number generator.
     srand((unsigned int)time(NULL));
 
-    // Exits with exit().
+    // Saves terminal state.
+    // \x1B[s      - Save cursor position.
+    // \x1B[?47h   - Save screen.
+    // \x1B[?1049h - Enable alternative buffer.
+    printf("\x1B[s\x1B[?47h\x1B[?1049h");
+
+    const bool registered_on_exit = 0 == atexit(&on_exit);
+
     while (true) {
-        run_start_menu();
+        if (run_start_menu()) break;
         run_game();
     }
+
+    if (!registered_on_exit) on_exit();
 
     return 0;
 }
