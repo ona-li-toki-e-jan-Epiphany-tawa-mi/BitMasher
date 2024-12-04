@@ -14,36 +14,26 @@
 A text adventure game where you act as an antivirus attempting to rid a computer
 of a RANSOMWARE attack.
 
-## How to run
-
-Dendencies:
-
-- Python 3 - [https://www.python.org](https://www.python.org/)
-
-There is a `flake.nix` you can use with `nix develop path:.` to generate a
-development enviroment.
-
-Then, run one of the following commands to play:
-
-```
-python3 bitmasher.py
-./bitmasher.py
-```
-
-## How to test
+## How to build
 
 Dependencies:
 
-- mypy.
-
-There is a `flake.nix` you can use with `nix develop path:.` to generate a
-development enviroment.
+- A C compiler supporting c11.
+- POSIX system.
 
 Then, run the following command(s):
 
-```sh
-mypy bitmasher.py
 ```
+./build.sh
+```
+
+The executable will be named `bitmasher`.
+
+## Configuration
+
+There is a section at the top of the program file `bitmasher.c` containing
+configuration options. All config options bear a description detailing what they
+modify and what values they accept.
 
 ## Installation
 
@@ -79,12 +69,6 @@ have RANSOMWARE. Using the SCANner will reveal what the surronding rooms
 contain, and the room you are currently in will be automatically SCANned for
 you. But beware: SCANning takes time. Also, occasionaly a SCAN will fail and
 need to be repeated.
-
-## Configuration
-
-There is a section at the top of the script containing configuration
-options. All config options bear a description detailing what they modify and
-what values they accept.
 
 ## Release notes
 
