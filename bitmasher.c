@@ -159,6 +159,9 @@ static void sleep_ns(const long nanoseconds) {
     nanosleep(&time, NULL);
 }
 
+/**
+ * Gets the current time, in seconds, since some unspecified point in the past.
+ */
 static long get_time_s(void) {
     struct timespec tp;
     if (-1 == clock_gettime(CLOCK_MONOTONIC, &tp)) {
@@ -297,6 +300,9 @@ static void delayed_print_newline(void) {
     delayed_print(false, "\n");
 }
 
+/**
+ * Clears the terminal.
+ */
 static void clear(void) {
     // \x1B[2J - clears screen.
     // \x1B[H  - returns cursor to home position.
@@ -327,6 +333,10 @@ typedef struct {
     size_t count;
 } Selector;
 
+/**
+ * @param option - the character the player must enter to select this option.
+ * Must not be whitespace.
+ */
 static void selector_add_option(Selector *const selector, const char option) {
     assert(NULL != selector);
     assert(!isspace(option));
@@ -348,6 +358,13 @@ static void selector_clear(Selector* selector) {
 }
 
 #define SELECTOR_GET_SELECTION_BUFFER_SIZE 50
+/**
+ * Queries the user for a selection from the added options. Does not prompt.
+ * Crashes if stdin could not be read.
+ *
+ * @return the user's selection, or a null terminator, if the option list is
+ * empty.
+ */
 static char selector_get_selection(const Selector *const selector) {
     assert(NULL != selector);
 
@@ -613,6 +630,10 @@ struct System {
     System* adjacent[DIRECTION_COUNT];
 };
 
+/**
+ * Attempts to perform a scan of the system. If successful, the sytem's scan
+ * result will be updated.
+ */
 static void system_try_scan(System *const system, const bool can_fail) {
     assert(NULL != system);
 
@@ -657,6 +678,11 @@ typedef struct {
     size_t count;
 } Map;
 
+/**
+ * Allocates a new system from the map's internal buffer and returns it.
+ *
+ * You do not need to free this pointer.
+ */
 static System* map_alloc_system(Map *const map) {
     assert(NULL != map);
     assert(MAP_MAX_COUNT > map->count);
@@ -664,6 +690,11 @@ static System* map_alloc_system(Map *const map) {
     return &map->systems[map->count++];
 }
 
+/**
+ * Attempts to place a system and item on the given map.
+ *
+ * @return true if successful.
+ */
 static bool map_try_place_system( Map *const       map
                                 , const SystemType system
                                 , const ItemType   item) {
@@ -966,6 +997,10 @@ static void run_boss_battle_intro(void) {
     await_player(true);
 }
 
+/**
+ * @param remaining_items - the items that the player did not obtain.
+ * @param lose_time - the time that the player loses if equal to get_time_s().
+ */
 static void run_boss_battle( const Inventory *const remaining_items
                            , const long lose_time
                            ) {
@@ -1118,6 +1153,10 @@ static void run_boss_battle( const Inventory *const remaining_items
 // Game                                                                       //
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Fills the given inventory with the items the player needs to find to win the
+ * game.
+ */
 static void generate_required_items(Inventory *const inventory) {
     assert(NULL != inventory);
 
