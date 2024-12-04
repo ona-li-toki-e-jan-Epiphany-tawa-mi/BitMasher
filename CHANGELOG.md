@@ -1,6 +1,6 @@
 # Changelog
 
-## Upcoming
+## 7.4274214874
 
 - Rewrote in C for funsies.
 - Now restores terminal state on shutdown.

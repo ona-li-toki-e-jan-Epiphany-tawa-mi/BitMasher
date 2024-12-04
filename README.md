@@ -84,7 +84,5 @@ need to be repeated.
 
 ## Release notes
 
-- Relicensed as GPLv3+.
-- Removed from PyPI.
-- Removed packaging stuff; BitMasher is now a single script.
-- Code cleanup.
+- Rewrote in C for funsies.
+- Now restores terminal state on shutdown.

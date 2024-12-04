@@ -1419,7 +1419,7 @@ static const char *const logo[] = {
     "|/ \\___/ \\_______/   )_(   |/     \\||/     \\|\\_______)|/     \\|(_______/|/   \\__/"
 };
 
-static const char *const version = "V6.327438247";
+static const char *const version = "V7.4274214874";
 
 static void run_instructions_menu(void) {
     clear();
