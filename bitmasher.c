@@ -666,20 +666,15 @@ static System* map_alloc_system(Map *const map) {
 
 static bool map_try_place_system( Map *const       map
                                 , const SystemType system
-                                , const ItemType   item
-                                , size_t *const    steps_taken
-                                ) {
+                                , const ItemType   item) {
     assert(NULL != map);
     assert(0 < map->count);
-    assert(NULL != steps_taken);
 
     const System* previous_system = NULL;
     System*       traverser       = &map->systems[0];
 
     // Traverse map and a system to it.
     for (size_t steps_left = MAX_STEPS; 0 < steps_left; --steps_left) {
-        *steps_taken += 1;
-
         if (MOVE_CHANCE > rand() % 100) {
             // Gathers possible systems to move to.
             System* adjacents[DIRECTION_COUNT] = {0};
@@ -767,8 +762,6 @@ static Map* map_generate(Inventory *const items) {
         system_pool[j]  = type;
     }
 
-    // Statistics.
-    size_t steps_taken       = 0;
     size_t systems_generated = 0;
 
     // All requried items must be generated, but not all rooms, thus we iterate
@@ -785,8 +778,7 @@ static Map* map_generate(Inventory *const items) {
         const bool placed_item =
             map_try_place_system( map
                                 , system_pool[next_system_index]
-                                , item_pool.items[0].type
-                                , &steps_taken);
+                                , item_pool.items[0].type);
 
         if (placed_item) {
             ++systems_generated;
@@ -808,8 +800,7 @@ static Map* map_generate(Inventory *const items) {
     // We place the RANSOMWARE last so so that there is a path to every item.
     if (!map_try_place_system( map
                              , system_pool[next_system_index]
-                             , ITEM_RANSOMWARE
-                             , &steps_taken)
+                             , ITEM_RANSOMWARE)
                              ) {
         fprintf(stderr, "ERROR: Unable to place ransomware on the map\n");
         exit(1);
@@ -824,10 +815,6 @@ static Map* map_generate(Inventory *const items) {
         fprintf(stderr, "      There are only %zu systems avalible in total "
                         "for generation\n", systems_generated);
     }
-
-    fprintf(stderr, "INFO: Map generator statistics:\n");
-    fprintf(stderr, "      Total traverser steps - %zu\n", steps_taken);
-    fprintf(stderr, "      Systems generated - %zu\n", systems_generated);
 
     return map;
 }
