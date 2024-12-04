@@ -1561,7 +1561,7 @@ int main(void) {
     }
 
     // Seed random number generator.
-    srand((unsigned int)time(NULL));
+    srand((unsigned int)get_time_s());
 
     // Saves terminal state.
     // \x1B[s      - Save cursor position.
