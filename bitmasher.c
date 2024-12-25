@@ -154,7 +154,7 @@ static const Terminal* terminal_size(void) {
  * @param nanoseconds - must be 0 <= nanoseconds < 1,000,000,000.
  */
 static void sleep_ns(const long nanoseconds) {
-    assert(1000000000 > nanoseconds);
+    assert(1000000000 > nanoseconds && 0 <= nanoseconds);
     const struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
     nanosleep(&time, NULL);
 }
