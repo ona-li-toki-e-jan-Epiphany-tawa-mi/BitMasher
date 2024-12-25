@@ -1,5 +1,9 @@
 # Changelog
 
+## 7.5385325985
+
+- Fixed typo in license menu.
+
 ## 7.4274214874
 
 - Rewrote in C for funsies.

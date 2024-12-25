@@ -81,8 +81,3 @@ have RANSOMWARE. Using the SCANner will reveal what the surronding rooms
 contain, and the room you are currently in will be automatically SCANned for
 you. But beware: SCANning takes time. Also, occasionaly a SCAN will fail and
 need to be repeated.
-
-## Release notes
-
-- Rewrote in C for funsies.
-- Now restores terminal state on shutdown.
