@@ -1505,7 +1505,7 @@ static void run_license_menu(void) {
                         "http://www.gnu.org/licenses/.");
     delayed_print_newline();
     delayed_print(true, "Source (paltepuk):");
-    delayed_print(true, "https://http://paltepuk.xyz/cgit/BitMasher.git/about/");
+    delayed_print(true, "https://paltepuk.xyz/cgit/BitMasher.git/about/");
     delayed_print(true, "(I2P) http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/cgit/BitMasher.git/about/");
     delayed_print(true, "(Tor) http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/cgit/BitMasher.git/about/");
     delayed_print(true, "Source (GitHub):");
