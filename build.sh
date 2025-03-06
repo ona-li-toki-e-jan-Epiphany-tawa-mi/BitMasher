@@ -31,7 +31,7 @@ set -x
 
 # Automatically format if astyle is installed.
 if type astyle > /dev/null 2>&1; then
-    astyle -n --style=attach "$source" > /dev/null
+    astyle -n --style=attach "$source" > /dev/null || exit 1
 fi
 # shellcheck disable=SC2086 # We want $ALL_CFLAGS to wordsplit.
-$CC $ALL_CFLAGS -o bitmasher "$source"
+$CC $ALL_CFLAGS -o bitmasher "$source" || exit 1
