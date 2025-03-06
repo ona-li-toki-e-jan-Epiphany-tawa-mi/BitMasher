@@ -31,7 +31,7 @@ To enable optimizations, you can add one or more of the following arguments to
 the EXTRA_CFLAGS enviroment variable:
 
 - `-O3` - general optimizations.
-- `-DNDEBUG -Wno-return-type` - disable safety checks. Performance > safety.
+- `-DNDEBUG` - disable safety checks. Performance > safety.
 
 I.e.:
 

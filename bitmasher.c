@@ -431,7 +431,7 @@ static const char* item_type_name(const ItemType type) {
     case ITEM_NONE:                     return "None";
     case ITEM_RANSOMWARE:               return "The RANSOMWARE";
 
-    default: assert(false && "unreachable");
+    default: assert(false && "unreachable"); exit(1);
     }
 }
 
@@ -533,7 +533,7 @@ static Direction direction_opposite(const Direction direction) {
     case DIRECTION_RIGHT: return DIRECTION_LEFT;
 
     case DIRECTION_COUNT:
-    default: assert(false && "unreachable");
+    default: assert(false && "unreachable"); exit(1);
     }
 }
 
@@ -555,7 +555,7 @@ static const char* scan_result_name(const ScanResult scan) {
     case SCAN_SUSPICOUS: return "Abnormal. Suspicous activity";
     case SCAN_ERROR:     return "[ERROR]";
 
-    default: assert(false && "unreachable");
+    default: assert(false && "unreachable"); exit(1);
     }
 }
 
@@ -618,7 +618,7 @@ static const char* system_type_name(const SystemType type) {
         return "Random-Information-Generator";
 
     case SYSTEM_TYPE_COUNT:
-    default: assert(false && "unreachable");
+    default: assert(false && "unreachable"); exit(1);
     }
 }
 
