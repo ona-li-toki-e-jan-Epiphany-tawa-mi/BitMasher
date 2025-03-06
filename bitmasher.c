@@ -94,8 +94,8 @@ static_assert( PLAYER_DAMAGE_BOOST > 0
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
 
 /*
- * Macro to typecheck printf-like functions.
- * Works in gcc and clang.
+ * Typechecks printf-like functions.
+ * Works in GCC and clang.
  * format - the argument number (1-indexed) that has the format string.
  * va_list - the argument number that has the variable argument list (...).
  */
@@ -104,6 +104,16 @@ static_assert( PLAYER_DAMAGE_BOOST > 0
     __attribute__ ((__format__ (printf, format, va_list)))
 #else // __GNUC__
 #  define PRINTF_TYPECHECK(format, va_list)
+#endif
+
+/*
+ * Checks that all pointer parameters to a function are not NULL.
+ * Works in GCC and clang.
+ */
+#ifdef __GNUC__
+#  define NONNULL __attribute__ ((nonnull))
+#else // __GNUC__
+#  define NONNULL
 #endif
 
 // Zero-initialized.
@@ -199,10 +209,10 @@ static void handle_stdin_error(void) {
  * @param center - whether to print the slice centered in terminal. Will print
  * the text without centering if the slice is larger than the width.
  */
-static void delayed_print_internal( const bool        center
-                                  , const char *const slice
-                                  , const size_t      length
-                                  ) {
+NONNULL static void delayed_print_internal( const bool        center
+                                          , const char *const slice
+                                          , const size_t      length
+                                          ) {
     assert(NULL != slice);
 
     if (center) {
@@ -236,10 +246,10 @@ static void delayed_print_internal( const bool        center
  * @param center - whether to print the lines centered in the terminal.
  * @param format - like with the printf function family.
  */
-static void PRINTF_TYPECHECK(2, 3) delayed_print( const bool        center
-                                                , const char* const format
-                                                , ...
-                                                ) {
+NONNULL static void PRINTF_TYPECHECK(2, 3) delayed_print( const bool        center
+                                                        , const char* const format
+                                                        , ...
+                                                        ) {
     assert(NULL != format);
 
     // Use vsnprintf to handle the format string.
@@ -337,7 +347,7 @@ typedef struct {
  * @param option - the character the player must enter to select this option.
  * Must not be whitespace.
  */
-static void selector_add_option(Selector *const selector, const char option) {
+NONNULL static void selector_add_option(Selector *const selector, const char option) {
     assert(NULL != selector);
     assert(!isspace(option));
 
@@ -351,9 +361,8 @@ static void selector_add_option(Selector *const selector, const char option) {
     selector->options[selector->count++] = (char)tolower(option);
 }
 
-static void selector_clear(Selector* selector) {
+NONNULL static void selector_clear(Selector* selector) {
     assert(NULL != selector);
-
     selector->count = 0;
 }
 
@@ -365,7 +374,7 @@ static void selector_clear(Selector* selector) {
  * @return the user's selection, or a null terminator, if the option list is
  * empty.
  */
-static char selector_get_selection(const Selector *const selector) {
+NONNULL static char selector_get_selection(const Selector *const selector) {
     assert(NULL != selector);
 
     if (0 == selector->count) return '\0';
@@ -448,7 +457,7 @@ typedef struct {
     size_t count;
 } Inventory;
 
-static void inventory_add_item(Inventory *const inventory, const Item item) {
+NONNULL static void inventory_add_item(Inventory *const inventory, const Item item) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == item.type) return;
@@ -466,10 +475,10 @@ static void inventory_add_item(Inventory *const inventory, const Item item) {
     }
 }
 
-static void inventory_try_remove_item( Inventory *const inventory
-                                     , const ItemType   type
-                                     , const size_t     quantity
-                                     ) {
+NONNULL static void inventory_try_remove_item( Inventory *const inventory
+                                            , const ItemType   type
+                                            , const size_t     quantity
+                                            ) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == type) return;
@@ -491,13 +500,13 @@ static void inventory_try_remove_item( Inventory *const inventory
     }
 }
 
-static void inventory_clear(Inventory *const inventory) {
+NONNULL static void inventory_clear(Inventory *const inventory) {
     assert(NULL != inventory);
 
     inventory->count = 0;
 }
 
-static size_t inventory_count_item( const Inventory *const inventory
+NONNULL static size_t inventory_count_item( const Inventory *const inventory
                                   , const ItemType         type
                                   ) {
     assert(NULL != inventory);
@@ -636,7 +645,7 @@ struct System {
  * Attempts to perform a scan of the system. If successful, the sytem's scan
  * result will be updated.
  */
-static void system_try_scan(System *const system, const bool can_fail) {
+NONNULL static void system_try_scan(System *const system, const bool can_fail) {
     assert(NULL != system);
 
     if (can_fail && SCAN_FAIL_CHANCE > rand() % 100) {
@@ -685,7 +694,7 @@ typedef struct {
  *
  * You do not need to free this pointer.
  */
-static System* map_alloc_system(Map *const map) {
+NONNULL static System* map_alloc_system(Map *const map) {
     assert(NULL != map);
     assert(MAP_MAX_COUNT > map->count);
 
@@ -697,9 +706,9 @@ static System* map_alloc_system(Map *const map) {
  *
  * @return true if successful.
  */
-static bool map_try_place_system( Map *const       map
-                                , const SystemType system
-                                , const ItemType   item) {
+NONNULL static bool map_try_place_system( Map *const       map
+                                        , const SystemType system
+                                        , const ItemType   item) {
     assert(NULL != map);
     assert(0 < map->count);
 
@@ -763,7 +772,7 @@ static bool map_try_place_system( Map *const       map
  * placed will be removed from this inventory.
  * @return caller must free().
  */
-static Map* map_generate(Inventory *const items) {
+NONNULL static Map* map_generate(Inventory *const items) {
     assert(NULL != items);
 
     Map *const map = calloc(1, sizeof(Map));
@@ -866,9 +875,8 @@ static char random_character(void) {
 /**
  * Randomly replaces characters in the given string.
  */
-static void garble_string(char *const string) {
+NONNULL static void garble_string(char *const string) {
     assert(NULL != string);
-
     for (char* c = string; '\0' != *c; ++c) {
         if (0 == rand() % 5) *c = random_character();
     }
@@ -877,9 +885,8 @@ static void garble_string(char *const string) {
 /**
  * Randomly upper/lower cases the characters in the given string.
  */
-static void annoying_case_string(char *const string) {
+NONNULL static void annoying_case_string(char *const string) {
     assert(NULL != string);
-
     for (char* c = string; '\0' != *c; ++c) {
         if (0 == rand() % 2) {
             *c = (char)toupper(*c);
@@ -893,7 +900,7 @@ static void annoying_case_string(char *const string) {
  * Creates a mutable copy of the given string.
  * @return caller must free().
  */
-static char* string_copy_mutable(const char *const string) {
+NONNULL static char* string_copy_mutable(const char *const string) {
     assert(NULL != string);
 
     const size_t length = strlen(string);
@@ -973,9 +980,9 @@ typedef struct {
 // printf argument destructurizer for Fighter. Pass by pointer.
 #define FIGHTER_ARG(fighter) (fighter)->name, (fighter)->health, (fighter)->damage
 
-static int fighter_attack( const Fighter *const attacker
-                         , Fighter *const       victim
-                         ) {
+NONNULL static int fighter_attack( const Fighter *const attacker
+                                 , Fighter *const       victim
+                                 ) {
     assert(NULL != attacker);
     assert(NULL != victim);
 
@@ -1001,9 +1008,9 @@ static void run_boss_battle_intro(void) {
  * @param remaining_items - the items that the player did not obtain.
  * @param lose_time - the time that the player loses if equal to get_time_s().
  */
-static void run_boss_battle( const Inventory *const remaining_items
-                           , const long lose_time
-                           ) {
+NONNULL static void run_boss_battle( const Inventory *const remaining_items
+                                   , const long lose_time
+                                   ) {
     assert(NULL != remaining_items);
 
     run_boss_battle_intro();
@@ -1157,7 +1164,7 @@ static void run_boss_battle( const Inventory *const remaining_items
  * Fills the given inventory with the items the player needs to find to win the
  * game.
  */
-static void generate_required_items(Inventory *const inventory) {
+NONNULL static void generate_required_items(Inventory *const inventory) {
     assert(NULL != inventory);
 
     inventory_add_item(inventory, (Item) {
@@ -1199,9 +1206,9 @@ static void generate_required_items(Inventory *const inventory) {
     }
 }
 
-static void display_inventory( const Inventory *const inventory
-                             , const Inventory *const required_items
-                             ) {
+NONNULL static void display_inventory( const Inventory *const inventory
+                                     , const Inventory *const required_items
+                                     ) {
     assert(NULL != inventory);
     assert(NULL != required_items);
 
