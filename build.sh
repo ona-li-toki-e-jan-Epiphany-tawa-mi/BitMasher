@@ -4,7 +4,7 @@
 set -u
 
 CC="${CC:-cc}"
-CFLAGS="${CFLAGS:--Wall -Wextra -Wpedantic -Wconversion -Wswitch-enum}"
+CFLAGS="${CFLAGS:--Wall -Wextra -Wpedantic -Wconversion -Wswitch-enum -Wmissing-prototypes}"
 EXTRA_CFLAGS="${EXTRA_CFLAGS:-}"
 ALL_CFLAGS="$CFLAGS $EXTRA_CFLAGS -std=c11"
 
