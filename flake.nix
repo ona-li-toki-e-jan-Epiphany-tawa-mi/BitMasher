@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # This file is part of BitMasher.
 #
 # Copyright (c) 2025 ona-li-toki-e-jan-Epiphany-tawa-mi
@@ -17,21 +15,24 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with BitMasher. If not, see <https://www.gnu.org/licenses/>.
 
-# Error on unset variables.
-set -u
+{
+  description = "BitMasher development environment";
 
-CC="${CC:-cc}"
-CFLAGS="${CFLAGS:--Wall -Wextra -Wpedantic -Wconversion -Wswitch-enum -Wmissing-prototypes}"
-EXTRA_CFLAGS="${EXTRA_CFLAGS:-}"
-ALL_CFLAGS="$CFLAGS $EXTRA_CFLAGS -std=c11"
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-source=bitmasher.c
+  outputs = { self, nixpkgs }:
+    let inherit (nixpkgs.lib) genAttrs systems;
 
-set -x
-
-# Automatically format if astyle is installed.
-if type astyle > /dev/null 2>&1; then
-    astyle -n --style=attach "$source" > /dev/null
-fi
-# shellcheck disable=SC2086 # We want $ALL_CFLAGS to wordsplit.
-$CC $ALL_CFLAGS -o bitmasher "$source"
+        forAllSystems = f: genAttrs systems.flakeExposed (system: f {
+          pkgs = import nixpkgs { inherit system; };
+        });
+    in {
+      devShells = forAllSystems ({ pkgs }: {
+        default = with pkgs; mkShell {
+          packages = [
+            astyle
+          ];
+        };
+      });
+    };
+}
