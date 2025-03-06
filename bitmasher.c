@@ -935,8 +935,7 @@ static void run_lose_sequence(const bool funny) {
         garble_string(text_copy);
     }
     delayed_print(true, "%s", text_copy);
-    free(text_copy);
-    text_copy = NULL;
+    free(text_copy); text_copy = NULL;
 
     delayed_print_newline();
 
@@ -944,8 +943,7 @@ static void run_lose_sequence(const bool funny) {
     text_copy = string_copy_mutable(text_2); // must free().
     annoying_case_string(text_copy);
     delayed_print(true, "%s", text_copy);
-    free(text_copy);
-    text_copy = NULL;
+    free(text_copy); text_copy = NULL;
 
     delayed_print_newline();
 
@@ -1400,8 +1398,7 @@ static void run_game(void) {
     }
  lend_game:
 
-    free(map);
-    map = NULL;
+    free(map); map = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
