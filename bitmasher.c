@@ -1,6 +1,6 @@
 /* This file is part of BitMasher.
  *
- * Copyright (c) 2024 ona-li-toki-e-jan-Epiphany-tawa-mi
+ * Copyright (c) 2024-2025 ona-li-toki-e-jan-Epiphany-tawa-mi
  *
  * BitMasher is free software: you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -54,8 +54,10 @@
 #define SCAN_TIME_NS 800000000L
 // The chance a SCAN will fail.
 #define SCAN_FAIL_CHANCE 10
-static_assert( 0 <= SCAN_FAIL_CHANCE && SCAN_FAIL_CHANCE < 100
-             , "SCAN_FAIL_CHANCE must be an integer between 0 <= n < 100");
+static_assert(
+    0 <= SCAN_FAIL_CHANCE && SCAN_FAIL_CHANCE < 100,
+    "SCAN_FAIL_CHANCE must be an integer between 0 <= n < 100"
+);
 
 // The time each line printed with delayed_print() waits for in nanoseconds.
 #define DELAYED_PRINT_DELAY_NS 110000000L
@@ -67,8 +69,10 @@ static_assert( 0 <= SCAN_FAIL_CHANCE && SCAN_FAIL_CHANCE < 100
 // The chance that the traverser choses to move to an existing room over findinga
 // a new one. Make larger for spikier maps.
 #define MOVE_CHANCE 70
-static_assert( 0 <= MOVE_CHANCE && MOVE_CHANCE < 100
-             , "MOVE_CHANCE must be an integer between 0 <= n < 100");
+static_assert(
+    0 <= MOVE_CHANCE && MOVE_CHANCE < 100,
+    "MOVE_CHANCE must be an integer between 0 <= n < 100"
+);
 
 
 // Amount of time, in nanoseconds, it takes for a move to happen in the battle.
@@ -81,8 +85,10 @@ static_assert( 0 <= MOVE_CHANCE && MOVE_CHANCE < 100
 #define FIGHTER_BASE_DAMAGE 10
 // Additional damage points the player gets.
 #define PLAYER_DAMAGE_BOOST 5
-static_assert( PLAYER_DAMAGE_BOOST > 0
-             , "PLAYER_DAMAGE_BOOST must be > 0 for the player to win");
+static_assert(
+    PLAYER_DAMAGE_BOOST > 0,
+    "PLAYER_DAMAGE_BOOST must be > 0 for the player to win"
+);
 // Damage boost the RANSOMWARE gets per missing vulnerability.
 #define VULNERABILITY_DAMAGE_BOOST 10
 
@@ -209,10 +215,11 @@ static void handle_stdin_error(void) {
  * @param center - whether to print the slice centered in terminal. Will print
  * the text without centering if the slice is larger than the width.
  */
-NONNULL static void delayed_print_internal( const bool        center
-                                          , const char *const slice
-                                          , const size_t      length
-                                          ) {
+NONNULL static void delayed_print_internal(
+    const bool        center,
+    const char *const slice,
+    const size_t      length
+) {
     assert(NULL != slice);
 
     if (center) {
@@ -246,26 +253,33 @@ NONNULL static void delayed_print_internal( const bool        center
  * @param center - whether to print the lines centered in the terminal.
  * @param format - like with the printf function family.
  */
-NONNULL static void PRINTF_TYPECHECK(2, 3) delayed_print( const bool        center
-                                                        , const char* const format
-                                                        , ...
-                                                        ) {
+NONNULL static void PRINTF_TYPECHECK(2, 3) delayed_print(
+    const bool        center,
+    const char* const format,
+    ...
+) {
     assert(NULL != format);
 
     // Use vsnprintf to handle the format string.
     static char buffer[DELAYED_PRINT_MAX_BUFFER_SIZE];
     va_list args;
     va_start(args, format);
-    const int result = vsnprintf( buffer
-                                , DELAYED_PRINT_MAX_BUFFER_SIZE
-                                , format, args);
+    const int result =
+        vsnprintf(buffer, DELAYED_PRINT_MAX_BUFFER_SIZE, format, args);
     if (0 > result) {
-        fprintf(stderr, "ERROR: "__FILE__":%s: failed to run vsnprintf: %s\n"
-                      , __func__, strerror(errno));
+        fprintf(
+            stderr,
+            "ERROR: "__FILE__":%s: failed to run vsnprintf: %s\n"
+            , __func__, strerror(errno)
+        );
         exit(1);
     } else if (result >= DELAYED_PRINT_MAX_BUFFER_SIZE) {
-        fprintf(stderr, "WARN: "__FILE__":%s: output truncated when running "
-                        "vsnprintf with format '%s'\n", __func__, format);
+        fprintf(
+            stderr,
+            "WARN: "__FILE__":%s: output truncated when running vsnprintf with "
+            "format '%s'\n",
+            __func__, format
+        );
     }
     va_end(args);
 
@@ -430,17 +444,28 @@ typedef enum {
 
 static const char* item_type_name(const ItemType type) {
     switch (type) {
-    case ITEM_MEMORY_READ_ACCESS:       return "Full memory read access";
-    case ITEM_MEMORY_WRITE_ACCESS:      return "Full memory write access";
-    case ITEM_POINTER_DEREFERENCER:     return "Pointer dereferencer";
-    case ITEM_OS_OVERRIDE_CAPABILITY:   return "OS override capability";
-    case ITEM_RANSOMWARE_CODE_FRAGMENT: return "RANSOMWARE code fragment";
-    case ITEM_VULNERABILITY:            return "Vulnerability";
-    case ITEM_SANDBOXER:                return "Sandboxer";
-    case ITEM_NONE:                     return "None";
-    case ITEM_RANSOMWARE:               return "The RANSOMWARE";
+    case ITEM_MEMORY_READ_ACCESS:
+        return "Full memory read access";
+    case ITEM_MEMORY_WRITE_ACCESS:
+        return "Full memory write access";
+    case ITEM_POINTER_DEREFERENCER:
+        return "Pointer dereferencer";
+    case ITEM_OS_OVERRIDE_CAPABILITY:
+        return "OS override capability";
+    case ITEM_RANSOMWARE_CODE_FRAGMENT:
+        return "RANSOMWARE code fragment";
+    case ITEM_VULNERABILITY:
+        return "Vulnerability";
+    case ITEM_SANDBOXER:
+        return "Sandboxer";
+    case ITEM_NONE:
+        return "None";
+    case ITEM_RANSOMWARE:
+        return "The RANSOMWARE";
 
-    default: assert(false && "unreachable"); exit(1);
+    default:
+        assert(false && "unreachable");
+        exit(1);
     }
 }
 
@@ -457,7 +482,10 @@ typedef struct {
     size_t count;
 } Inventory;
 
-NONNULL static void inventory_add_item(Inventory *const inventory, const Item item) {
+NONNULL static void inventory_add_item(
+    Inventory *const inventory,
+    const Item item
+) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == item.type) return;
@@ -475,10 +503,11 @@ NONNULL static void inventory_add_item(Inventory *const inventory, const Item it
     }
 }
 
-NONNULL static void inventory_try_remove_item( Inventory *const inventory
-                                            , const ItemType   type
-                                            , const size_t     quantity
-                                            ) {
+NONNULL static void inventory_try_remove_item(
+    Inventory *const inventory,
+    const ItemType   type,
+    const size_t     quantity
+) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == type) return;
@@ -502,13 +531,13 @@ NONNULL static void inventory_try_remove_item( Inventory *const inventory
 
 NONNULL static void inventory_clear(Inventory *const inventory) {
     assert(NULL != inventory);
-
     inventory->count = 0;
 }
 
-NONNULL static size_t inventory_count_item( const Inventory *const inventory
-                                  , const ItemType         type
-                                  ) {
+NONNULL static size_t inventory_count_item(
+    const Inventory *const inventory,
+    const ItemType         type
+) {
     assert(NULL != inventory);
 
     if (ITEM_NONE == type) return 0;
@@ -536,13 +565,19 @@ typedef enum {
 
 static Direction direction_opposite(const Direction direction) {
     switch (direction) {
-    case DIRECTION_UP:    return DIRECTION_DOWN;
-    case DIRECTION_DOWN:  return DIRECTION_UP;
-    case DIRECTION_LEFT:  return DIRECTION_RIGHT;
-    case DIRECTION_RIGHT: return DIRECTION_LEFT;
+    case DIRECTION_UP:
+        return DIRECTION_DOWN;
+    case DIRECTION_DOWN:
+        return DIRECTION_UP;
+    case DIRECTION_LEFT:
+        return DIRECTION_RIGHT;
+    case DIRECTION_RIGHT:
+        return DIRECTION_LEFT;
 
     case DIRECTION_COUNT:
-    default: assert(false && "unreachable"); exit(1);
+    default:
+        assert(false && "unreachable");
+        exit(1);
     }
 }
 
@@ -557,14 +592,21 @@ typedef enum {
 
 static const char* scan_result_name(const ScanResult scan) {
     switch (scan) {
-    case SCAN_NONE: return "";
+    case SCAN_NONE:
+        return "";
 
-    case SCAN_EMPTY:     return "Empty";
-    case SCAN_ABNORMAL:  return "Abnormal";
-    case SCAN_SUSPICOUS: return "Abnormal. Suspicous activity";
-    case SCAN_ERROR:     return "[ERROR]";
+    case SCAN_EMPTY:
+        return "Empty";
+    case SCAN_ABNORMAL:
+        return "Abnormal";
+    case SCAN_SUSPICOUS:
+        return "Abnormal. Suspicous activity";
+    case SCAN_ERROR:
+        return "[ERROR]";
 
-    default: assert(false && "unreachable"); exit(1);
+    default:
+        assert(false && "unreachable");
+        exit(1);
     }
 }
 
@@ -627,7 +669,9 @@ static const char* system_type_name(const SystemType type) {
         return "Random-Information-Generator";
 
     case SYSTEM_TYPE_COUNT:
-    default: assert(false && "unreachable"); exit(1);
+    default:
+        assert(false && "unreachable");
+        exit(1);
     }
 }
 
@@ -656,11 +700,13 @@ NONNULL static void system_try_scan(System *const system, const bool can_fail) {
     switch (system->item) {
     case ITEM_RANSOMWARE: {
         system->scan_result = SCAN_SUSPICOUS;
-    } return;
+    }
+    return;
 
     case ITEM_NONE: {
         system->scan_result = SCAN_EMPTY;
-    } return;
+    }
+    return;
 
     case ITEM_MEMORY_READ_ACCESS:
     case ITEM_MEMORY_WRITE_ACCESS:
@@ -670,9 +716,11 @@ NONNULL static void system_try_scan(System *const system, const bool can_fail) {
     case ITEM_VULNERABILITY:
     case ITEM_SANDBOXER: {
         system->scan_result = SCAN_ABNORMAL;
-    } return;
+    }
+    return;
 
-    default: assert(false && "unreachable");
+    default:
+        assert(false && "unreachable");
     }
 }
 
@@ -706,9 +754,11 @@ NONNULL static System* map_alloc_system(Map *const map) {
  *
  * @return true if successful.
  */
-NONNULL static bool map_try_place_system( Map *const       map
-                                        , const SystemType system
-                                        , const ItemType   item) {
+NONNULL static bool map_try_place_system(
+    Map *const       map,
+    const SystemType system,
+    const ItemType   item
+) {
     assert(NULL != map);
     assert(0 < map->count);
 
@@ -721,10 +771,11 @@ NONNULL static bool map_try_place_system( Map *const       map
             // Gathers possible systems to move to.
             System* adjacents[DIRECTION_COUNT] = {0};
             size_t  adjacents_count            = 0;
-            for ( Direction direction = 0
-                ; direction < DIRECTION_COUNT
-                ; ++direction
-                ) {
+            for (
+                Direction direction = 0;
+                direction < DIRECTION_COUNT;
+                ++direction
+            ) {
                 System* adjacent = traverser->adjacent[direction];
                 if (NULL != adjacent && adjacent != previous_system) {
                     adjacents[adjacents_count++] = adjacent;
@@ -739,10 +790,11 @@ NONNULL static bool map_try_place_system( Map *const       map
             // Gathers possible directions to add systems to.
             Direction directions[DIRECTION_COUNT] = {0};
             size_t    directions_count            = 0;
-            for ( Direction direction = 0
-                ; direction < DIRECTION_COUNT
-                ; ++direction
-                ) {
+            for (
+                Direction direction = 0;
+                direction < DIRECTION_COUNT;
+                ++direction
+            ) {
                 if (NULL == traverser->adjacent[direction]) {
                     directions[directions_count++] = direction;
                 }
@@ -752,12 +804,10 @@ NONNULL static bool map_try_place_system( Map *const       map
             System *const next_system = map_alloc_system(map);
             next_system->type         = system;
             next_system->item         = item;
-
-            const Direction direction
-                = directions[(size_t)rand() % directions_count];
+            const Direction direction =
+                directions[(size_t)rand() % directions_count];
             traverser->adjacent[direction] = next_system;
-            next_system->adjacent[direction_opposite(direction)]
-                = traverser;
+            next_system->adjacent[direction_opposite(direction)] = traverser;
 
             return true;
         }
@@ -818,9 +868,11 @@ NONNULL static Map* map_generate(Inventory *const items) {
         }
 
         const bool placed_item =
-            map_try_place_system( map
-                                , system_pool[next_system_index]
-                                , item_pool.items[0].type);
+            map_try_place_system(
+                map,
+                system_pool[next_system_index],
+                item_pool.items[0].type
+            );
 
         if (placed_item) {
             ++systems_generated;
@@ -834,16 +886,20 @@ NONNULL static Map* map_generate(Inventory *const items) {
         }
 
         // Consume item.
-        inventory_try_remove_item( &item_pool
-                                 , item_pool.items[0].type
-                                 , 1);
+        inventory_try_remove_item(
+            &item_pool
+            , item_pool.items[0].type
+            , 1
+        );
     }
 
     // We place the RANSOMWARE last so so that there is a path to every item.
-    if (!map_try_place_system( map
-                             , system_pool[next_system_index]
-                             , ITEM_RANSOMWARE)
-                             ) {
+    if (!map_try_place_system(
+                map
+                , system_pool[next_system_index]
+                , ITEM_RANSOMWARE
+            )
+       ) {
         fprintf(stderr, "ERROR: Unable to place ransomware on the map\n");
         exit(1);
     }
@@ -852,10 +908,17 @@ NONNULL static Map* map_generate(Inventory *const items) {
     // Warning for partial map generation.
     if (expected_item_count != items->count) {
         fprintf(stderr, "WARN: Unable to generate enough systems\n");
-        fprintf(stderr, "      Could only place %zu items from a pool of %zu\n"
-                      , items->count, expected_item_count);
-        fprintf(stderr, "      There are only %zu systems avalible in total "
-                        "for generation\n", systems_generated);
+        fprintf(
+            stderr,
+            "      Could only place %zu items from a pool of %zu\n"
+            , items->count, expected_item_count
+        );
+        fprintf(
+            stderr,
+            "      There are only %zu systems avalible in total for "
+            "generation\n",
+            systems_generated
+        );
     }
 
     return map;
@@ -942,7 +1005,8 @@ static void run_lose_sequence(const bool funny) {
         garble_string(text_copy);
     }
     delayed_print(true, "%s", text_copy);
-    free(text_copy); text_copy = NULL;
+    free(text_copy);
+    text_copy = NULL;
 
     delayed_print_newline();
 
@@ -950,7 +1014,8 @@ static void run_lose_sequence(const bool funny) {
     text_copy = string_copy_mutable(text_2); // must free().
     annoying_case_string(text_copy);
     delayed_print(true, "%s", text_copy);
-    free(text_copy); text_copy = NULL;
+    free(text_copy);
+    text_copy = NULL;
 
     delayed_print_newline();
 
@@ -980,9 +1045,10 @@ typedef struct {
 // printf argument destructurizer for Fighter. Pass by pointer.
 #define FIGHTER_ARG(fighter) (fighter)->name, (fighter)->health, (fighter)->damage
 
-NONNULL static int fighter_attack( const Fighter *const attacker
-                                 , Fighter *const       victim
-                                 ) {
+NONNULL static int fighter_attack(
+    const Fighter *const attacker,
+    Fighter *const       victim
+) {
     assert(NULL != attacker);
     assert(NULL != victim);
 
@@ -995,8 +1061,10 @@ static void run_boss_battle_intro(void) {
 
     delayed_print(true, "The RANSOMWARE");
     delayed_print_newline();
-    delayed_print(true, "You have located the RANSOMWARE infecting the "
-                        "computer");
+    delayed_print(
+        true,
+        "You have located the RANSOMWARE infecting the computer"
+    );
     delayed_print(true, "EXTRACT it from the system as soon as possible");
     delayed_print(true, "There is no other option");
     delayed_print_newline();
@@ -1008,36 +1076,37 @@ static void run_boss_battle_intro(void) {
  * @param remaining_items - the items that the player did not obtain.
  * @param lose_time - the time that the player loses if equal to get_time_s().
  */
-NONNULL static void run_boss_battle( const Inventory *const remaining_items
-                                   , const long lose_time
-                                   ) {
+NONNULL static void run_boss_battle(
+    const Inventory *const remaining_items,
+    const long lose_time
+) {
     assert(NULL != remaining_items);
 
     run_boss_battle_intro();
 
     const bool can_alter_memory =
-        0 == inventory_count_item(remaining_items, ITEM_MEMORY_READ_ACCESS)
-     && 0 == inventory_count_item(remaining_items, ITEM_MEMORY_WRITE_ACCESS);
+    0 == inventory_count_item(remaining_items, ITEM_MEMORY_READ_ACCESS)
+    && 0 == inventory_count_item(remaining_items, ITEM_MEMORY_WRITE_ACCESS);
     const bool has_admin_privileges =
-        0 == inventory_count_item(remaining_items, ITEM_OS_OVERRIDE_CAPABILITY);
+    0 == inventory_count_item(remaining_items, ITEM_OS_OVERRIDE_CAPABILITY);
     const bool has_dereferencer =
-        0 == inventory_count_item(remaining_items, ITEM_POINTER_DEREFERENCER);
+    0 == inventory_count_item(remaining_items, ITEM_POINTER_DEREFERENCER);
     const bool has_sandboxer =
-        0 == inventory_count_item(remaining_items, ITEM_SANDBOXER);
+    0 == inventory_count_item(remaining_items, ITEM_SANDBOXER);
 
     Fighter player = (Fighter) {
         .name   = "You",
         .health = FIGHTER_BASE_HEALTH,
         .damage = FIGHTER_BASE_DAMAGE + PLAYER_DAMAGE_BOOST,
     };
+    const size_t remaining_code_fragments =
+        inventory_count_item(remaining_items, ITEM_RANSOMWARE_CODE_FRAGMENT);
+    const size_t remaining_vulernabilities =
+        inventory_count_item(remaining_items, ITEM_VULNERABILITY);
     Fighter ransomware = (Fighter) {
         .name   = "The RANSOMWARE",
-        .health = FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST
-                * (int)inventory_count_item( remaining_items
-                                           , ITEM_RANSOMWARE_CODE_FRAGMENT),
-        .damage = FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST
-                * (int)inventory_count_item( remaining_items
-                                           , ITEM_VULNERABILITY),
+        .health = FIGHTER_BASE_HEALTH + CODE_FRAGMENT_HEALTH_BOOST * (int)remaining_code_fragments,
+        .damage = FIGHTER_BASE_DAMAGE + VULNERABILITY_DAMAGE_BOOST * (int)remaining_vulernabilities
     };
 
     Selector fight_menu = {0};
@@ -1056,8 +1125,11 @@ NONNULL static void run_boss_battle( const Inventory *const remaining_items
         clear();
         delayed_print(true, "The RANSOMEWARE");
         if (!has_sandboxer) {
-            delayed_print(true, "Time left: %ld second(s)"
-                              , lose_time - current_time);
+            delayed_print(
+                true,
+                "Time left: %ld second(s)",
+                lose_time - current_time
+            );
         }
         delayed_print_newline();
         delayed_print(false, FIGHTER_FMT, FIGHTER_ARG(&player));
@@ -1077,51 +1149,70 @@ NONNULL static void run_boss_battle( const Inventory *const remaining_items
             sleep_ns(BATTLE_MOVE_DELAY);
 
             if (!has_dereferencer) {
-                delayed_print(false, "Unable to locate relavent memory to "
-                                     "alter; you lack the capabilities");
+                delayed_print(
+                    false,
+                    "Unable to locate relavent memory to alter; you lack the "
+                    "capabilities"
+                );
             } else if (!can_alter_memory) {
-                delayed_print(false, "Unable to alter relavent memory; you "
-                                     "lack the capabilities");
+                delayed_print(
+                    false,
+                    "Unable to alter relavent memory; you lack the capabilities"
+                );
             } else if (!has_admin_privileges) {
-                delayed_print(false, "Memory alteration denied; you lack "
-                                     "sufficent privileges");
+                delayed_print(
+                    false,
+                    "Memory alteration denied; you lack sufficent privileges"
+                );
             } else {
                 const int damage = fighter_attack(&player, &ransomware);
-                delayed_print(false, "You complete partial code EXTRACTion, "
-                                     "dealing %d dmg (%d hp remaining)", damage
-                                   , ransomware.health);
+                delayed_print(
+                    false,
+                    "You complete partial code EXTRACTion, dealing %d dmg (%d "
+                    "hp remaining)",
+                    damage, ransomware.health
+                );
 
                 if (0 >= ransomware.health) {
                     sleep_ns(BATTLE_MOVE_DELAY);
                     clear();
                     delayed_print(true, "Congratulations");
                     delayed_print_newline();
-                    delayed_print(true, "You have successfully EXTRACTed the "
-                                        "RANSOMWARE");
+                    delayed_print(
+                        true,
+                        "You have successfully EXTRACTed the RANSOMWARE"
+                    );
                     delayed_print_newline();
                     await_player(true);
                 }
             }
-        } break;
+        }
+        break;
 
         case 'n': {
             sleep_ns(BATTLE_MOVE_DELAY);
             delayed_print_newline();
             delayed_print(false, "You do absolutely NOTHING...");
-        } break;
+        }
+        break;
 
         case 'd': {
             sleep_ns(BATTLE_MOVE_DELAY);
             delayed_print_newline();
             delayed_print(false, "You attempt a funny DANCE...");
             sleep_ns(BATTLE_MOVE_DELAY);
-            delayed_print(false, "You are an antivirus, you have no means to "
-                                 "DANCE");
+            delayed_print(
+                false,
+                "You are an antivirus, you have no means to DANCE"
+            );
             sleep_ns(BATTLE_MOVE_DELAY);
             const int damage = fighter_attack(&player, &player);
-            delayed_print(false, "In the process you corrupted your own data, "
-                                 "dealing %d dmg (%d hp remaining)", damage
-                               , player.health);
+            delayed_print(
+                false,
+                "In the process you corrupted your own data, dealing %d dmg "
+                "(%d hp remaining)",
+                damage, player.health
+            );
             sleep_ns(BATTLE_MOVE_DELAY);
 
             if (0 >= player.health) {
@@ -1129,11 +1220,14 @@ NONNULL static void run_boss_battle( const Inventory *const remaining_items
                 run_lose_sequence(true);
                 return;
             }
-        } break;
+        }
+        break;
 
-        case 'e': return;
+        case 'e':
+            return;
 
-        default: assert(false && "unreachable");
+        default:
+            assert(false && "unreachable");
         }
 
         // RANSOMWARE attack sequence.
@@ -1142,8 +1236,12 @@ NONNULL static void run_boss_battle( const Inventory *const remaining_items
         delayed_print(false, "The RANSOMWARE attempts to deliver a payload...");
         sleep_ns(BATTLE_MOVE_DELAY);
         const int damage = fighter_attack(&ransomware, &player);
-        delayed_print(false, "You were hit with a viral payload, dealing %d "
-                             "dmg (%d hp remaining)", damage, player.health);
+        delayed_print(
+            false,
+            "You were hit with a viral payload, dealing %d dmg (%d hp "
+            "remaining)",
+            damage, player.health
+        );
 
         if (0 >= player.health) {
             sleep_ns(BATTLE_MOVE_DELAY);
@@ -1206,9 +1304,10 @@ NONNULL static void generate_required_items(Inventory *const inventory) {
     }
 }
 
-NONNULL static void display_inventory( const Inventory *const inventory
-                                     , const Inventory *const required_items
-                                     ) {
+NONNULL static void display_inventory(
+    const Inventory *const inventory,
+    const Inventory *const required_items
+) {
     assert(NULL != inventory);
     assert(NULL != required_items);
 
@@ -1220,8 +1319,11 @@ NONNULL static void display_inventory( const Inventory *const inventory
     } else {
         for (size_t i = 0; i < inventory->count; ++i) {
             const Item *const item = &inventory->items[i];
-            delayed_print(true, "- %s: %zu", item_type_name(item->type)
-                              , item->quantity);
+            delayed_print(
+                true,
+                "- %s: %zu",
+                item_type_name(item->type), item->quantity
+            );
         }
     }
 
@@ -1233,8 +1335,11 @@ NONNULL static void display_inventory( const Inventory *const inventory
     } else {
         for (size_t i = 0; i < required_items->count; ++i) {
             const Item *const item = &required_items->items[i];
-            delayed_print(true, "- %s: %zu", item_type_name(item->type)
-                              , item->quantity);
+            delayed_print(
+                true,
+                "- %s: %zu",
+                item_type_name(item->type), item->quantity
+            );
         }
     }
 
@@ -1247,8 +1352,8 @@ static void run_game(void) {
     generate_required_items(&required_items);
     Map* map = map_generate(&required_items); // Must free().
 
-    const long lose_time = get_time_s() + (long)required_items.count
-        * SECONDS_PER_SYSTEM;
+    const long lose_time = get_time_s() + (long)required_items.count *
+                           SECONDS_PER_SYSTEM;
 
     Inventory inventory = {0};
     Selector  game_menu = {0};
@@ -1274,14 +1379,20 @@ static void run_game(void) {
         // Display status.
         clear();
         if (SCAN_NONE != current_system->scan_result) {
-            delayed_print(true, "%s (scan: %s)"
-                              , system_type_name(current_system->type)
-                              , scan_result_name(current_system->scan_result));
+            delayed_print(
+                true,
+                "%s (scan: %s)"
+                , system_type_name(current_system->type)
+                , scan_result_name(current_system->scan_result)
+            );
         } else {
             delayed_print(true, "%s", system_type_name(current_system->type));
         }
-        delayed_print(true, "Time left: %ld second(s)"
-                          , lose_time - current_time);
+        delayed_print(
+            true,
+            "Time left: %ld second(s)"
+            , lose_time - current_time
+        );
         delayed_print_newline();
 
         selector_clear(&game_menu);
@@ -1294,58 +1405,90 @@ static void run_game(void) {
             switch (direction) {
             case DIRECTION_UP: {
                 if (SCAN_NONE != system->scan_result) {
-                    delayed_print(false, "[%s (scan: %s)] is (U)P above"
-                                       , system_type_name(system->type)
-                                       , scan_result_name(system->scan_result));
+                    delayed_print(
+                        false,
+                        "[%s (scan: %s)] is (U)P above"
+                        , system_type_name(system->type)
+                        , scan_result_name(system->scan_result)
+                    );
                 } else {
-                    delayed_print(false, "[%s] is (U)P above"
-                                       , system_type_name(system->type));
+                    delayed_print(
+                        false,
+                        "[%s] is (U)P above"
+                        , system_type_name(system->type)
+                    );
                 }
                 selector_add_option(&game_menu, 'u');
-            } break;
+            }
+            break;
             case DIRECTION_DOWN: {
                 if (SCAN_NONE != system->scan_result) {
-                    delayed_print(false, "[%s (scan: %s)] is (D)OWN below"
-                                       , system_type_name(system->type)
-                                       , scan_result_name(system->scan_result));
+                    delayed_print(
+                        false,
+                        "[%s (scan: %s)] is (D)OWN below"
+                        , system_type_name(system->type)
+                        , scan_result_name(system->scan_result)
+                    );
                 } else {
-                    delayed_print(false, "[%s] is (D)OWN below"
-                                       , system_type_name(system->type));
+                    delayed_print(
+                        false,
+                        "[%s] is (D)OWN below"
+                        , system_type_name(system->type)
+                    );
                 }
                 selector_add_option(&game_menu, 'd');
-            } break;
+            }
+            break;
             case DIRECTION_LEFT: {
                 if (SCAN_NONE != system->scan_result) {
-                    delayed_print(false, "[%s (scan: %s)] is to the (L)EFT"
-                                       , system_type_name(system->type)
-                                       , scan_result_name(system->scan_result));
+                    delayed_print(
+                        false,
+                        "[%s (scan: %s)] is to the (L)EFT"
+                        , system_type_name(system->type)
+                        , scan_result_name(system->scan_result)
+                    );
                 } else {
-                    delayed_print(false, "[%s] is to the (L)EFT"
-                                       , system_type_name(system->type));
+                    delayed_print(
+                        false,
+                        "[%s] is to the (L)EFT"
+                        , system_type_name(system->type)
+                    );
                 }
                 selector_add_option(&game_menu, 'l');
-            } break;
+            }
+            break;
             case DIRECTION_RIGHT: {
                 if (SCAN_NONE != system->scan_result) {
-                    delayed_print(false, "[%s (scan: %s)] is to the (R)IGHT"
-                                       , system_type_name(system->type)
-                                       , scan_result_name(system->scan_result));
+                    delayed_print(
+                        false,
+                        "[%s (scan: %s)] is to the (R)IGHT"
+                        , system_type_name(system->type)
+                        , scan_result_name(system->scan_result)
+                    );
                 } else {
-                    delayed_print(false, "[%s] is to the (R)IGHT"
-                                       , system_type_name(system->type));
+                    delayed_print(
+                        false,
+                        "[%s] is to the (R)IGHT"
+                        , system_type_name(system->type)
+                    );
                 }
                 selector_add_option(&game_menu, 'r');
-            } break;
+            }
+            break;
 
             case DIRECTION_COUNT:
-            default: assert(false && "unreachable");
+            default:
+                assert(false && "unreachable");
             }
         }
 
         // Adds ability to take room's item.
         if (ITEM_NONE != current_system->item) {
-            delayed_print(false, "There is a [%s]. (T)AKE it?"
-                               , item_type_name(current_system->item));
+            delayed_print(
+                false,
+                "There is a [%s]. (T)AKE it?"
+                , item_type_name(current_system->item)
+            );
             selector_add_option(&game_menu, 't');
         }
 
@@ -1362,16 +1505,20 @@ static void run_game(void) {
         switch (choice) {
         case 'u': {
             current_system = current_system->adjacent[DIRECTION_UP];
-        } break;
+        }
+        break;
         case 'd': {
             current_system = current_system->adjacent[DIRECTION_DOWN];
-        } break;
+        }
+        break;
         case 'l': {
             current_system = current_system->adjacent[DIRECTION_LEFT];
-        } break;
+        }
+        break;
         case 'r': {
             current_system = current_system->adjacent[DIRECTION_RIGHT];
-        } break;
+        }
+        break;
 
         case 't': {
             inventory_add_item(&inventory, (Item) {
@@ -1380,32 +1527,40 @@ static void run_game(void) {
             });
             inventory_try_remove_item(&required_items, current_system->item, 1);
             current_system->item = ITEM_NONE;
-        } break;
+        }
+        break;
 
         case 's': {
             delayed_print_newline();
             delayed_print(false, "SCANning...");
             sleep_ns(SCAN_TIME_NS);
 
-            for ( Direction direction = 0
-                ; direction < DIRECTION_COUNT
-                ; ++direction
-                ) {
+            for (
+                Direction direction = 0;
+                direction < DIRECTION_COUNT;
+                ++direction
+            ) {
                 System *const adjacent = current_system->adjacent[direction];
                 if (NULL != adjacent) system_try_scan(adjacent, true);
             }
-        } break;
+        }
+        break;
 
-        case 'i': display_inventory(&inventory, &required_items); break;
+        case 'i':
+            display_inventory(&inventory, &required_items);
+            break;
 
-        case 'e': goto lend_game;
+        case 'e':
+            goto lend_game;
 
-        default: assert(false && "unreachable");
+        default:
+            assert(false && "unreachable");
         }
     }
- lend_game:
+lend_game:
 
-    free(map); map = NULL;
+    free(map);
+    map = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1430,28 +1585,36 @@ static void run_instructions_menu(void) {
 
     delayed_print(true, "INSTRUCTIONS");
     delayed_print_newline();
-    delayed_print(true, "You are an antivirus trying to rid a computer of a "
-                         "RANSOMWARE before it takes over the system. There is "
-                         "a finite amount of time before the system is fully "
-                         "infected");
+    delayed_print(
+        true,
+        "You are an antivirus trying to rid a computer of a RANSOMWARE before "
+        "it takes over the system. There is a finite amount of time before the "
+        "system is fully infected"
+    );
     delayed_print_newline();
-    delayed_print(true, "In order to defeat it, you must find all items before "
-                        "you find the RANSOMWARE. If you do not, you will not "
-                        "be able to EXTRACT it and you will lose.");
+    delayed_print(
+        true,
+        "In order to defeat it, you must find all items before you find the "
+        "RANSOMWARE. If you do not, you will not be able to EXTRACT it and you "
+        "will lose."
+    );
     delayed_print_newline();
-    delayed_print(true, "Each system (room) contains an item, which you can "
-                        "move to; UP, DOWN, LEFT, AND RIGHT. Keep in mind that "
-                        "the map is NOT 2D; Moving RIGHT, UP, LEFT, and DOWN "
-                        "will lead to a different room than the one you "
-                        "started in. The map is 'Spiky' so-to-speak.");
+    delayed_print(
+        true,
+        "Each system (room) contains an item, which you can move to; UP, DOWN, "
+        "LEFT, AND RIGHT. Keep in mind that the map is NOT 2D; Moving RIGHT, "
+        "UP, LEFT, and DOWN will lead to a different room than the one you "
+        "started in. The map is 'Spiky' so-to-speak."
+    );
     delayed_print_newline();
-    delayed_print(true, "You have a SCANner to aid in figuring out which rooms "
-                        "contain items and which have RANSOMWARE. Using the "
-                        "SCANner will reveal what the surronding rooms "
-                        "contain, and the room you are currently in will be "
-                        "automatically SCANned for you. But beware: SCANning "
-                        "takes time. Also, occasionaly a SCAN will fail and "
-                        "need to be repeated.");
+    delayed_print(
+        true,
+        "You have a SCANner to aid in figuring out which rooms contain items "
+        "and which have RANSOMWARE. Using the SCANner will reveal what the "
+        "surrounding rooms contain, and the room you are currently in will be "
+        "automatically SCANned for you. But beware: SCANning takes time. Also, "
+        "occasionaly a SCAN will fail and need to be repeated."
+    );
     delayed_print_newline();
     delayed_print(true, "Good luck");
     delayed_print_newline();
@@ -1464,19 +1627,26 @@ static void run_about_menu(void) {
 
     delayed_print(true, "ABOUT");
     delayed_print_newline();
-    delayed_print(true, "As part of some garbage that doesn't matter, I needed "
-                        "to create a text-based adventure game where you visit "
-                        "various rooms to gather items. If you get all the "
-                        "items before you meet the boss, you win, else, you "
-                        "lose.");
+    delayed_print(
+        true,
+        "As part of some garbage that doesn't matter, I needed to create a "
+        "text-based adventure game where you visit various rooms to gather "
+        "items. If you get all the items before you meet the boss, you win, "
+        "else, you lose."
+    );
     delayed_print_newline();
-    delayed_print(true, "I had decided to massively overcomplicate said game "
-                        "and make it something somewhat special. I can't "
-                        "stand going through the effort of making something "
-                        "and doing it half-baked.");
+    delayed_print(
+        true,
+        "I had decided to massively overcomplicate said game and make it "
+        "something somewhat special. I can't stand going through the effort of "
+        "making something and doing it half-baked."
+    );
     delayed_print_newline();
-    delayed_print(true, "Originally, this was written in Python, but I later "
-                        "decided to rewrite it in C for funsies.");
+    delayed_print(
+        true,
+        "Originally, this was written in Python, but I later decided to rewrite "
+        "it in C for funsies."
+    );
     delayed_print_newline();
     delayed_print(true, "Anyways, have fun");
     delayed_print_newline();
@@ -1489,24 +1659,32 @@ static void run_license_menu(void) {
 
     delayed_print(true, "LICENSE");
     delayed_print_newline();
-    delayed_print(true, "Copyright (C) 2024 "
-                        "ona-li-toki-e-jan-Epiphany-tawa-mi.");
+    delayed_print(
+        true,
+        "Copyright (C) 2024-2025 ona-li-toki-e-jan-Epiphany-tawa-mi."
+    );
     delayed_print_newline();
-    delayed_print(true, "This program is free software: you can redistribute "
-                        "it and/or modify it under the terms of the GNU "
-                        "General Public License as published by the Free "
-                        "Software Foundation, either version 3 of the License, "
-                        "or (at your option) any later version.");
+    delayed_print(
+        true,
+        "This program is free software: you can redistribute it and/or modify "
+        "it under the terms of the GNU General Public License as published by "
+        "the Free Software Foundation, either version 3 of the License, or (at "
+        "your option) any later version."
+    );
     delayed_print_newline();
-    delayed_print(true, "This program is distributed in the hope that it will "
-                        "be useful, but WITHOUT ANY WARRANTY; without even the "
-                        "implied warranty of MERCHANTABILITY or FITNESS FOR A "
-                        "PARTICULAR PURPOSE. See the GNU General Public "
-                        "License for more details.");
+    delayed_print(
+        true,
+        "This program is distributed in the hope that it will be useful, but "
+        "WITHOUT ANY WARRANTY; without even the implied warranty of "
+        "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU "
+        "General Public License for more details."
+    );
     delayed_print_newline();
-    delayed_print(true, "You should have received a copy of the GNU General "
-                        "Public License along with this program. If not, see "
-                        "http://www.gnu.org/licenses/.");
+    delayed_print(
+        true,
+        "You should have received a copy of the GNU General Public License "
+        "along with this program. If not, see http://www.gnu.org/licenses/."
+    );
     delayed_print_newline();
     delayed_print(true, "Source (paltepuk):");
     delayed_print(true, "https://paltepuk.xyz/cgit/BitMasher.git/about/");
@@ -1552,8 +1730,10 @@ static bool run_start_menu(void) {
         delayed_print_newline();
         delayed_print(true, "%s", version);
         delayed_print_newline();
-        delayed_print(true, "Type and enter the character in paranthesis to "
-                            "select an option.");
+        delayed_print(
+            true,
+            "Type and enter the character in paranthesis to select an option."
+        );
         delayed_print_newline();
         delayed_print(true, "(P)LAY");
         delayed_print(true, "(I)NSTRUCTIONS");
@@ -1563,17 +1743,26 @@ static bool run_start_menu(void) {
 
         const char choice = selector_get_selection(&start_menu);
         switch (choice) {
-        case 'p': return false;
+        case 'p':
+            return false;
 
-        case 'i': run_instructions_menu(); break;
-        case 'a': run_about_menu();        break;
-        case 'l': run_license_menu();      break;
+        case 'i':
+            run_instructions_menu();
+            break;
+        case 'a':
+            run_about_menu();
+            break;
+        case 'l':
+            run_license_menu();
+            break;
 
         case 'e': {
             run_exit_sequence();
-        } return true;
+        }
+        return true;
 
-        default:  assert(false && "unreachable");
+        default:
+            assert(false && "unreachable");
         }
     }
 }
