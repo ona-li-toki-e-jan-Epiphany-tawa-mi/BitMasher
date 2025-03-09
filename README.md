@@ -36,7 +36,7 @@ the EXTRA_CFLAGS enviroment variable:
 I.e.:
 
 ```sh
-EXTRA_CFLAGS='-O3 -DNDEBUG -Wno-return-type' ./build.sh
+EXTRA_CFLAGS='-O3 -DNDEBUG' ./build.sh
 ```
 
 The executable will be named `bitmasher`.
