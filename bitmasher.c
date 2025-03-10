@@ -42,6 +42,8 @@
 #include <sys/ioctl.h>
 #include <time.h>
 #include <unistd.h>
+// From include/.
+#include <anal.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Configuration                                                              //
@@ -98,29 +100,6 @@ static_assert(
 ////////////////////////////////////////////////////////////////////////////////
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof((array)[0]))
-
-/*
- * Typechecks printf-like functions.
- * Works in GCC and clang.
- * format - the argument number (1-indexed) that has the format string.
- * va_list - the argument number that has the variable argument list (...).
- */
-#ifdef __GNUC__
-#  define PRINTF_TYPECHECK(format, va_list) \
-    __attribute__ ((__format__ (printf, format, va_list)))
-#else // __GNUC__
-#  define PRINTF_TYPECHECK(format, va_list)
-#endif
-
-/*
- * Checks that all pointer parameters to a function are not NULL.
- * Works in GCC and clang.
- */
-#ifdef __GNUC__
-#  define NONNULL __attribute__ ((nonnull))
-#else // __GNUC__
-#  define NONNULL
-#endif
 
 // Zero-initialized.
 typedef struct {
