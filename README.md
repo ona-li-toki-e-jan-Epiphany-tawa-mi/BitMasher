@@ -18,7 +18,7 @@ of a RANSOMWARE attack.
 
 Dependencies:
 
-- A C compiler supporting c11. Clang, GCC, or Zig recommended.
+- A C compiler supporting C99. Clang, GCC, or Zig recommended.
 - POSIX system.
 
 Then, run the following command(s):

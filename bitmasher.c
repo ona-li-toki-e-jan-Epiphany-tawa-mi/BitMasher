@@ -55,11 +55,8 @@
 // The time, in nanoseconds, it takes to SCAN the surrounding systems.
 #define SCAN_TIME_NS 800000000L
 // The chance a SCAN will fail.
+// Must be 0 <= SCAN_FAIL_CHANCE < 100.
 #define SCAN_FAIL_CHANCE 10
-static_assert(
-    0 <= SCAN_FAIL_CHANCE && SCAN_FAIL_CHANCE < 100,
-    "SCAN_FAIL_CHANCE must be an integer between 0 <= n < 100"
-);
 
 // The time each line printed with delayed_print() waits for in nanoseconds.
 #define DELAYED_PRINT_DELAY_NS 110000000L
@@ -70,12 +67,8 @@ static_assert(
 #define MAX_STEPS 100
 // The chance that the traverser choses to move to an existing room over findinga
 // a new one. Make larger for spikier maps.
+// Must be 0 <= MOVE_CHANCE < 100
 #define MOVE_CHANCE 70
-static_assert(
-    0 <= MOVE_CHANCE && MOVE_CHANCE < 100,
-    "MOVE_CHANCE must be an integer between 0 <= n < 100"
-);
-
 
 // Amount of time, in nanoseconds, it takes for a move to happen in the battle.
 #define BATTLE_MOVE_DELAY 700000000L
@@ -86,11 +79,8 @@ static_assert(
 // Base damage for all fighters.
 #define FIGHTER_BASE_DAMAGE 10
 // Additional damage points the player gets.
+// Must be > 0 for the player to win.
 #define PLAYER_DAMAGE_BOOST 5
-static_assert(
-    PLAYER_DAMAGE_BOOST > 0,
-    "PLAYER_DAMAGE_BOOST must be > 0 for the player to win"
-);
 // Damage boost the RANSOMWARE gets per missing vulnerability.
 #define VULNERABILITY_DAMAGE_BOOST 10
 
