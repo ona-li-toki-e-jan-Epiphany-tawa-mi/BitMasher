@@ -1,5 +1,10 @@
 # Changelog
 
+## Upcoming
+
+- Added DOS support.
+- Fixed bug where winning the boss fight would not exit it.
+
 ## 7.5385325985
 
 - Fixed typo in license menu.

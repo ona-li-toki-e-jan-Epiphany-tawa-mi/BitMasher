@@ -14,21 +14,27 @@
 A text adventure game where you act as an antivirus attempting to rid a computer
 of a RANSOMWARE attack.
 
-## How to build
+## How to Build
 
 Dependencies:
 
-- A C compiler supporting c11. Clang, GCC, or Zig recommended.
-- POSIX system.
+- A C compiler supporting C99.
+- POSIX or DOS system.
 
-Then, run the following command(s):
+### POSIX
+
+Clang, GCC, or Zig recommended.
+
+Run the following command(s):
 
 ```sh
-./build.sh
+./build.sh -std=c99
 ```
 
-To enable optimizations, you can add one or more of the following arguments to
-the EXTRA_CFLAGS enviroment variable:
+Compiler defaults to cc. Set the CC environment variable to override it.
+
+To enable optimizations, you can append on or more of the following arguments to
+the build command:
 
 - `-O3` - general optimizations.
 - `-DNDEBUG` - disable safety checks. Performance > safety.
@@ -36,10 +42,42 @@ the EXTRA_CFLAGS enviroment variable:
 I.e.:
 
 ```sh
-EXTRA_CFLAGS='-O3 -DNDEBUG' ./build.sh
+./build.sh -std=c99 -O3 -DNDEBUG
 ```
 
 The executable will be named `bitmasher`.
+
+### DOS (cross-compilation)
+
+DJGPP recommended - [https://www.delorie.com/djgpp/](https://www.delorie.com/djgpp/)
+
+Run `build.sh` after setting the CC environment variable to the cross
+compiler. I.e.:
+
+```sh
+CC=i586-pc-msdosdjgpp-gcc ./build.sh
+```
+
+To enable optimizations, you can append on or more of the following arguments to
+the build command:
+
+- `-O3` - general optimizations.
+- `-DNDEBUG` - disable safety checks. Performance > safety.
+
+I.e.:
+
+```sh
+CC=i586-pc-msdosdjgpp-gcc ./build.sh -O3 -DNDEBUG
+```
+
+The executable will be named `bitmasher.exe`.
+
+### DOS
+
+DJGPP recommended - [https://www.delorie.com/djgpp/](https://www.delorie.com/djgpp/)
+
+Just compile `bitmasher.c` directly with whatever C compiler you happen to
+have. Make sure to add the `include` directory.
 
 ## Configuration
 
@@ -57,7 +95,7 @@ You can install it with Nix from my personal package repository
 Each option you can select will be shown by a single character in paranthesis.
 Typing that character and hitting ENTER will select that option.
 
-## How to play
+## How to Play
 
 You are an antivirus trying to rid a computer of a RANSOMWARE before it takes
 over the system. There is a finite amount of time before the system is fully

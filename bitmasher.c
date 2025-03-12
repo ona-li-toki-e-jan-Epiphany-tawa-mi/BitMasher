@@ -28,7 +28,17 @@
  * rid a computer of a ransomware attack.
  */
 
-#define _POSIX_C_SOURCE 200809L
+// https://github.com/cpredef/predef
+#if defined(MSDOS) || defined(__MSDOS__) || defined(_MSDOS) || defined(__DOS__)
+#  define PLATFORM_DOS
+#else // defined(MSDOS) || defined(__MSDOS__) || defined(_MSDOS) || defined(__DOS__)
+// Assume POSIX.
+#  define PLATFORM_POSIX
+#endif
+
+#ifdef PLATFORM_POSIX
+#  define _POSIX_C_SOURCE 199309L
+#endif // PLATFORM_POSIX
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -38,10 +48,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// POSIX.
-#include <sys/ioctl.h>
-#include <time.h>
-#include <unistd.h>
+#ifdef PLATFORM_DOS
+#  include <dos.h>
+#endif // PLATFORM_DOS
+#ifdef PLATFORM_POSIX
+#  include <sys/ioctl.h>
+#  include <time.h>
+#  include <unistd.h>
+#endif // PLATFORM_POSIX
 // From include/.
 #include <anal.h>
 
@@ -55,11 +69,8 @@
 // The time, in nanoseconds, it takes to SCAN the surrounding systems.
 #define SCAN_TIME_NS 800000000L
 // The chance a SCAN will fail.
+// Must be 0 <= SCAN_FAIL_CHANCE < 100.
 #define SCAN_FAIL_CHANCE 10
-static_assert(
-    0 <= SCAN_FAIL_CHANCE && SCAN_FAIL_CHANCE < 100,
-    "SCAN_FAIL_CHANCE must be an integer between 0 <= n < 100"
-);
 
 // The time each line printed with delayed_print() waits for in nanoseconds.
 #define DELAYED_PRINT_DELAY_NS 110000000L
@@ -70,12 +81,8 @@ static_assert(
 #define MAX_STEPS 100
 // The chance that the traverser choses to move to an existing room over findinga
 // a new one. Make larger for spikier maps.
+// Must be 0 <= MOVE_CHANCE < 100
 #define MOVE_CHANCE 70
-static_assert(
-    0 <= MOVE_CHANCE && MOVE_CHANCE < 100,
-    "MOVE_CHANCE must be an integer between 0 <= n < 100"
-);
-
 
 // Amount of time, in nanoseconds, it takes for a move to happen in the battle.
 #define BATTLE_MOVE_DELAY 700000000L
@@ -86,14 +93,10 @@ static_assert(
 // Base damage for all fighters.
 #define FIGHTER_BASE_DAMAGE 10
 // Additional damage points the player gets.
+// Must be > 0 for the player to win.
 #define PLAYER_DAMAGE_BOOST 5
-static_assert(
-    PLAYER_DAMAGE_BOOST > 0,
-    "PLAYER_DAMAGE_BOOST must be > 0 for the player to win"
-);
 // Damage boost the RANSOMWARE gets per missing vulnerability.
 #define VULNERABILITY_DAMAGE_BOOST 10
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utilities                                                                  //
@@ -113,6 +116,7 @@ static const Terminal* terminal_size(void) {
 
     if (!dynamic_size) return &terminal;
 
+#ifdef PLATFORM_POSIX
     // Try ioctl().
     do {
         struct winsize window_size = {0};
@@ -137,6 +141,7 @@ static const Terminal* terminal_size(void) {
         dynamic_size    = false;
         return &terminal;
     } while (false);
+#endif // PLATFORM_POSIX
     // Assume size.
     terminal.width  = 80;
     terminal.height = 24;
@@ -148,23 +153,36 @@ static const Terminal* terminal_size(void) {
  * Sleeps for the specified number of nanoseconds.
  * @param nanoseconds - must be 0 <= nanoseconds < 1,000,000,000.
  */
-static void sleep_ns(const long nanoseconds) {
+static void sleep_ns(const long int nanoseconds) {
     assert(1000000000 > nanoseconds && 0 <= nanoseconds);
+#ifdef PLATFORM_DOS
+    delay((unsigned int)nanoseconds / 1000000);
+#elif defined(PLATFORM_POSIX) // PLATFORM_DOS
     const struct timespec time = { .tv_sec = 0, .tv_nsec = nanoseconds };
     nanosleep(&time, NULL);
+#else // PLATFORM_POSIX
+#  error Unsupported platform
+#endif
 }
 
 /**
  * Gets the current time, in seconds, since some unspecified point in the past.
  */
 static long get_time_s(void) {
-    struct timespec tp;
-    if (-1 == clock_gettime(CLOCK_MONOTONIC, &tp)) {
+#ifdef PLATFORM_DOS
+    struct time time = {0};
+    gettime(&time);
+    return time.ti_sec + 60 * (time.ti_min + (60 * time.ti_hour));
+#elif defined(PLATFORM_POSIX) // PLATFORM_DOS
+    struct timespec timespec = {0};
+    if (-1 == clock_gettime(CLOCK_MONOTONIC, &timespec)) {
         perror("Failed to read from monotonic clock");
         exit(1);
     }
-
-    return tp.tv_sec;
+    return timespec.tv_sec;
+#else // PLATFORM_POSIX
+#  error Unsupported platform
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1163,6 +1181,7 @@ NONNULL static void run_boss_battle(
                     );
                     delayed_print_newline();
                     await_player(true);
+                    return;
                 }
             }
         }
@@ -1546,6 +1565,14 @@ lend_game:
 // Main Menu                                                                  //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef PLATFORM_DOS
+#  define PLATFORM_STRING "DOS"
+#elif defined(PLATFORM_POSIX) // PLATFORM_DOS
+#  define PLATFORM_STRING "POSIX"
+#else // PLATFORM_POSIX
+#  error Unsupported platform
+#endif
+
 static const char *const logo[] = {
     " ______  __________________ _______  _______  _______           _______  _______ ",
     "(  ___ \\ \\__   __/\\__   __/(       )(  ___  )(  ____ \\|\\     /|(  ____ \\(  ____ )",
@@ -1665,12 +1692,31 @@ static void run_license_menu(void) {
         "along with this program. If not, see http://www.gnu.org/licenses/."
     );
     delayed_print_newline();
-    delayed_print(true, "Source (paltepuk):");
-    delayed_print(true, "https://paltepuk.xyz/cgit/BitMasher.git/about/");
-    delayed_print(true, "(I2P) http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/cgit/BitMasher.git/about/");
-    delayed_print(true, "(Tor) http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/cgit/BitMasher.git/about/");
-    delayed_print(true, "Source (GitHub):");
-    delayed_print(true, "https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/BitMasher/");
+    delayed_print(
+        true,
+        "Source (paltepuk):"
+    );
+    delayed_print(
+        true,
+        "Clearnet - https://paltepuk.xyz/cgit/BitMasher.git/about/"
+    );
+    delayed_print(
+        true,
+        "I2P - http://oytjumugnwsf4g72vemtamo72vfvgmp4lfsf6wmggcvba3qmcsta.b32.i2p/cgit/BitMasher.git/about/"
+    );
+    delayed_print(
+        true,
+        "Tor - http://4blcq4arxhbkc77tfrtmy4pptf55gjbhlj32rbfyskl672v2plsmjcyd.onion/cgit/BitMasher.git/about/"
+    );
+    delayed_print_newline();
+    delayed_print(
+        true,
+        "Source (GitHub):"
+    );
+    delayed_print(
+        true,
+        "Clearnet - https://github.com/ona-li-toki-e-jan-Epiphany-tawa-mi/BitMasher/"
+    );
     delayed_print_newline();
 
     await_player(true);
@@ -1707,7 +1753,7 @@ static bool run_start_menu(void) {
             delayed_print(true, "%s", logo[line]);
         }
         delayed_print_newline();
-        delayed_print(true, "%s", version);
+        delayed_print(true, "%s ("PLATFORM_STRING")", version);
         delayed_print_newline();
         delayed_print(
             true,
@@ -1755,10 +1801,12 @@ static void on_exit(void) {
 }
 
 int main(void) {
+#ifdef PLATFORM_POSIX
     if (!isatty(STDOUT_FILENO)) {
         fprintf(stderr, "ERROR: stdout is not a terminal\n");
         return 1;
     }
+#endif // PLATFORM_POSIX
 
     // Seed random number generator.
     srand((unsigned int)get_time_s());
