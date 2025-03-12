@@ -1163,6 +1163,7 @@ NONNULL static void run_boss_battle(
                     );
                     delayed_print_newline();
                     await_player(true);
+                    return;
                 }
             }
         }
