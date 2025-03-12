@@ -1,5 +1,6 @@
 # Build artifacts.
 bitmasher
+bitmasher.exe
 
 # Nix.
 flake.lock
