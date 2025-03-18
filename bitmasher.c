@@ -1584,7 +1584,7 @@ static const char *const logo[] = {
     "|/ \\___/ \\_______/   )_(   |/     \\||/     \\|\\_______)|/     \\|(_______/|/   \\__/"
 };
 
-static const char *const version = "V7.5385325985";
+static const char *const version = "V7.6496437096";
 
 static void run_instructions_menu(void) {
     clear();

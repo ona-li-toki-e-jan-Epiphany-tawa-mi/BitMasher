@@ -1,6 +1,6 @@
 # Changelog
 
-## Upcoming
+## 7.6496437096
 
 - Added DOS support.
 - Fixed bug where winning the boss fight would not exit it.
