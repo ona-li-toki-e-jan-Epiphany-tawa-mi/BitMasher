@@ -1628,38 +1628,6 @@ static void run_instructions_menu(void) {
     await_player(true);
 }
 
-static void run_about_menu(void) {
-    clear();
-
-    delayed_print(true, "ABOUT");
-    delayed_print_newline();
-    delayed_print(
-        true,
-        "As part of some garbage that doesn't matter, I needed to create a "
-        "text-based adventure game where you visit various rooms to gather "
-        "items. If you get all the items before you meet the boss, you win, "
-        "else, you lose."
-    );
-    delayed_print_newline();
-    delayed_print(
-        true,
-        "I had decided to massively overcomplicate said game and make it "
-        "something somewhat special. I can't stand going through the effort of "
-        "making something and doing it half-baked."
-    );
-    delayed_print_newline();
-    delayed_print(
-        true,
-        "Originally, this was written in Python, but I later decided to rewrite "
-        "it in C for funsies."
-    );
-    delayed_print_newline();
-    delayed_print(true, "Anyways, have fun");
-    delayed_print_newline();
-
-    await_player(true);
-}
-
 static void run_license_menu(void) {
     clear();
 
@@ -1742,7 +1710,6 @@ static bool run_start_menu(void) {
     Selector start_menu = {0};
     selector_add_option(&start_menu, 'p'); // (P)LAY.
     selector_add_option(&start_menu, 'i'); // (I)NSTRUCTIONS.
-    selector_add_option(&start_menu, 'a'); // (A)BOUT.
     selector_add_option(&start_menu, 'l'); // (L)ICENSE.
     selector_add_option(&start_menu, 'e'); // (E)XIT.
 
@@ -1762,32 +1729,29 @@ static bool run_start_menu(void) {
         delayed_print_newline();
         delayed_print(true, "(P)LAY");
         delayed_print(true, "(I)NSTRUCTIONS");
-        delayed_print(true, "(A)BOUT");
         delayed_print(true, "(L)ICENSE");
         delayed_print(true, "(E)XIT");
 
         const char choice = selector_get_selection(&start_menu);
         switch (choice) {
-        case 'p':
+        case 'p': {
             return false;
-
-        case 'i':
+        }
+        case 'i': {
             run_instructions_menu();
             break;
-        case 'a':
-            run_about_menu();
-            break;
-        case 'l':
+        }
+        case 'l': {
             run_license_menu();
             break;
-
+        }
         case 'e': {
             run_exit_sequence();
+            return true;
         }
-        return true;
-
-        default:
+        default: {
             assert(false && "unreachable");
+        }
         }
     }
 }

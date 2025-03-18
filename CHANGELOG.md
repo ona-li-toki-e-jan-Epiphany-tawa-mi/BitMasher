@@ -4,6 +4,7 @@
 
 - Added DOS support.
 - Fixed bug where winning the boss fight would not exit it.
+- Removed about menu.
 
 ## 7.5385325985
 
